@@ -1,0 +1,26 @@
+{% extends app.request.xmlHttpRequest ? '_modal.html.twig' : '_modal_page.html.twig' %}
+
+{% block modal_title %}{{ mechanic.id ? mechanic.fullName : 'Nuovo meccanico' }}{% endblock %}
+
+{% block modal_content %}
+    {{ form_start(form) }}
+        <div class="row">
+            <div class="col-sm-6">{{ form_row(form.name) }}</div>
+            <div class="col-sm-6">{{ form_row(form.surname) }}</div>
+            <div class="col-12">{{ form_row(form.color) }}</div>
+            <div class="col-6">{{ form_row(form.dailyHours) }}</div>
+            <div class="col-6">{{ form_row(form.sort) }}</div>
+            <div class="col-sm-6">{{ form_row(form.pin) }}</div>
+            {% if form.removePin is defined %}<div class="col-sm-6 pt-sm-4">{{ form_row(form.removePin) }}</div>{% endif %}
+        </div>
+        <div class="form-actions">
+            {% if mechanic.id %}<button class="btn btn-light text-danger me-auto" form="delete-mechanic">Disattiva</button>{% endif %}
+            <button class="btn btn-primary"><i class="fa fa-check"></i> Salva</button>
+        </div>
+    {{ form_end(form) }}
+    {% if mechanic.id %}
+        <form id="delete-mechanic" method="post" action="{{ path('mechanic_delete', {id: mechanic.id}) }}" data-native data-confirm="Togliere {{ mechanic.fullName }} da planning e tablet? Le ore registrate restano.">
+            <input type="hidden" name="_token" value="{{ csrf_token('submit') }}">
+        </form>
+    {% endif %}
+{% endblock %}

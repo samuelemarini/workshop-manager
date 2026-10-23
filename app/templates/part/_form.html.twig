@@ -1,0 +1,28 @@
+{% extends app.request.xmlHttpRequest ? '_modal.html.twig' : '_modal_page.html.twig' %}
+
+{% block modal_title %}{{ part.id ? part.description : 'Nuovo ricambio · ' ~ order.code }}{% endblock %}
+
+{% block modal_content %}
+    {{ form_start(form) }}
+        <div class="row">
+            <div class="col-sm-4">{{ form_row(form.code) }}</div>
+            <div class="col-sm-8">{{ form_row(form.description) }}</div>
+            <div class="col-4">{{ form_row(form.quantity) }}</div>
+            <div class="col-3">{{ form_row(form.unit) }}</div>
+            <div class="col-5">{{ form_row(form.unitPrice) }}</div>
+            <div class="col-sm-4">{{ form_row(form.status) }}</div>
+            <div class="col-sm-4">{{ form_row(form.supplier) }}</div>
+            <div class="col-sm-4">{{ form_row(form.expectedAt) }}</div>
+            <div class="col-12">{{ form_row(form.task) }}</div>
+        </div>
+        <div class="form-actions">
+            {% if part.id %}<button class="btn btn-light text-danger me-auto" form="delete-part">Elimina</button>{% endif %}
+            <button class="btn btn-primary"><i class="fa fa-check"></i> Salva</button>
+        </div>
+    {{ form_end(form) }}
+    {% if part.id %}
+        <form id="delete-part" method="post" action="{{ path('part_delete', {id: part.id}) }}" data-native data-confirm="Eliminare {{ part.description }}?">
+            <input type="hidden" name="_token" value="{{ csrf_token('submit') }}">
+        </form>
+    {% endif %}
+{% endblock %}

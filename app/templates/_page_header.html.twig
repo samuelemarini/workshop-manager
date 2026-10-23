@@ -1,0 +1,15 @@
+{# Intestazione pagina: icon, title, subtitle, back (url) + blocco azioni passato come "actions" (html) #}
+<div class="page-header">
+    <div class="page-title">
+        {% if back is defined and back %}
+            <a class="back-btn" href="{{ back }}" title="Indietro"><i class="fa fa-arrow-left"></i></a>
+        {% else %}
+            <span class="page-icon"><i class="fa {{ icon }}"></i></span>
+        {% endif %}
+        <div>
+            <h1>{{ title }}</h1>
+            {% if subtitle is defined and subtitle %}<div class="subtitle">{{ subtitle|raw }}</div>{% endif %}
+        </div>
+    </div>
+    {% if actions is defined %}<div class="page-actions">{{ actions|raw }}</div>{% endif %}
+</div>

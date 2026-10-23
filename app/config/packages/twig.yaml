@@ -1,0 +1,15 @@
+twig:
+    default_path: '%kernel.project_dir%/templates'
+    form_themes: ['bootstrap_5_layout.html.twig']
+    date:
+        format: 'd/m/Y H:i'
+        timezone: 'Europe/Rome'
+    number_format:
+        decimals: 0
+        decimal_point: ','
+        thousands_separator: '.'
+    globals:
+        app_name: 'Gestionale officina'
+when@test:
+    twig:
+        strict_variables: true

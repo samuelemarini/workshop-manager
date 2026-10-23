@@ -1,0 +1,32 @@
+{% extends 'base.html.twig' %}
+{% import '_macros.html.twig' as ui %}
+
+{% block title %}Veicoli{% endblock %}
+
+{% block body %}
+    {% set actions %}
+        <a class="btn btn-primary" href="{{ path('vehicle_new') }}"><i class="fa fa-plus"></i> Nuovo veicolo</a>
+    {% endset %}
+    {{ include('_page_header.html.twig', {icon: 'fa-car-side', title: 'Veicoli', subtitle: vehicles|length ~ ' veicoli dei clienti', actions: actions}) }}
+
+    <div class="table-card">
+        <div class="table-toolbar">
+            <div class="search-pill"><i class="fa fa-search"></i><input type="text" placeholder="Cerca targa, modello, cliente..." data-table-search="#vehicles" aria-label="Cerca veicolo"></div>
+        </div>
+        <table class="app-table cards-mobile" id="vehicles" data-datatable data-order='[[0,"asc"]]'>
+            <thead><tr><th>Targa</th><th>Veicolo</th><th>Proprietario</th><th class="num">Km</th><th>Revisione</th><th class="num">Ordini</th></tr></thead>
+            <tbody>
+                {% for v in vehicles %}
+                    <tr data-href="{{ path('vehicle_show', {id: v.id}) }}">
+                        <td class="cell-head" data-order="{{ v.plate }}" data-search="{{ v.plate }}">{{ ui.plate(v) }}</td>
+                        <td class="cell-title fw-semibold">{{ v.name }} <span class="text-muted fw-normal">{{ v.version }}</span></td>
+                        <td data-label="Proprietario">{{ v.owner.name ?? '—' }}</td>
+                        <td data-label="Km" class="num">{{ v.km ? v.km|num : '' }}</td>
+                        <td data-label="Revisione" data-order="{{ v.revisionDue ? v.revisionDue|date('Ymd') }}" class="{{ v.revisionDue and v.revisionDue < date('+30 days') ? 'text-danger fw-bold' }}">{{ v.revisionDue ? v.revisionDue|date('m/Y') : '' }}</td>
+                        <td data-label="Ordini" class="num">{{ v.workOrders|length }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

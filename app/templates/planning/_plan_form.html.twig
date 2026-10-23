@@ -1,0 +1,24 @@
+{% extends app.request.xmlHttpRequest ? '_modal.html.twig' : '_modal_page.html.twig' %}
+{% import '_macros.html.twig' as ui %}
+
+{% block modal_title %}Pianifica · {{ task.title }}{% endblock %}
+
+{% block modal_content %}
+    {% set o = task.workOrder %}
+    <div class="d-flex align-items-center gap-2 flex-wrap mb-3">
+        <a class="code-lg" href="{{ path('order_show', {id: o.id}) }}">{{ o.code }}</a>{{ ui.plate(o.vehicle) }}<span class="text-muted">{{ o.vehicle.name }} · {{ o.customer.name }}</span>
+        {% if o.promisedAt %}<span class="ms-auto mini fw-bold">Consegna {{ o.promisedAt|when }}</span>{% endif %}
+    </div>
+    {{ form_start(form) }}
+        <div class="row">
+            <div class="col-sm-6">{{ form_row(form.mechanic) }}</div>
+            <div class="col-sm-6">{{ form_row(form.workstation) }}</div>
+            <div class="col-sm-7">{{ form_row(form.plannedStart) }}</div>
+            <div class="col-sm-5">{{ form_row(form.estimatedMinutes) }}</div>
+        </div>
+        <div class="form-actions">
+            <a class="btn btn-light me-auto" href="{{ path('order_show', {id: o.id}) }}">Apri l'ordine</a>
+            <button class="btn btn-primary"><i class="fa fa-check"></i> Salva</button>
+        </div>
+    {{ form_end(form) }}
+{% endblock %}

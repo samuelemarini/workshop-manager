@@ -1,0 +1,35 @@
+# Sviluppo: codice montato da ./app, APP_ENV=dev. Produzione: docker-compose.prod.yml.
+services:
+  database:
+    image: mariadb:11
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Rome
+      - MYSQL_DATABASE=app
+      - MYSQL_PASSWORD=${DB_PASSWORD:?imposta DB_PASSWORD nel file .env accanto a docker-compose.yml}
+      - MYSQL_ROOT_HOST=%
+      - MYSQL_ROOT_PASSWORD=${DB_PASSWORD:?imposta DB_PASSWORD nel file .env accanto a docker-compose.yml}
+      - MYSQL_USER=user
+    volumes:
+      - ./mysql:/var/lib/mysql
+    ports:
+      - ${DB_PORT:-30036}:3306
+    restart: unless-stopped
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: dev
+    image: officina-web
+    environment:
+      - TZ=Europe/Rome
+      - DATABASE_URL=mysql://user:${DB_PASSWORD:?imposta DB_PASSWORD nel file .env accanto a docker-compose.yml}@database:3306/app?serverVersion=11.4.2-MariaDB&charset=utf8mb4
+      - APP_ENV=dev
+    volumes:
+      - ./app:/app
+    ports:
+      - ${WEB_PORT:-20036}:80
+    depends_on:
+      - database
+    restart: unless-stopped

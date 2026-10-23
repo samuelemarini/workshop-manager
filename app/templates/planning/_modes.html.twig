@@ -1,0 +1,6 @@
+{# Giorno / Settimana / Mese: stessa data di riferimento #}
+<div class="seg" role="group" aria-label="Vista">
+    <a class="{{ current == 'day' ? 'active' }}" href="{{ path('planning', {day: day|date('Y-m-d')}) }}">Giorno</a>
+    <a class="{{ current == 'week' ? 'active' }}" href="{{ path('planning_calendar', {mode: 'week', day: day|date('Y-m-d')}) }}">Settimana</a>
+    <a class="{{ current == 'month' ? 'active' }}" href="{{ path('planning_calendar', {mode: 'month', day: day|date('Y-m-d')}) }}">Mese</a>
+</div>

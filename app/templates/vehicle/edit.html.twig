@@ -1,0 +1,33 @@
+{% extends 'base.html.twig' %}
+{% import '_macros.html.twig' as ui %}
+
+{% block title %}{{ vehicle.id ? vehicle.plateLabel : 'Nuovo veicolo' }}{% endblock %}
+
+{% block body %}
+    {% set actions %}
+        {% if vehicle.id %}{{ ui.post_button(path('vehicle_delete', {id: vehicle.id}), ' Elimina', 'fa-trash', 'btn-light text-danger', 'Eliminare il veicolo ' ~ vehicle.plateLabel ~ '?') }}{% endif %}
+    {% endset %}
+    {{ include('_page_header.html.twig', {back: vehicle.id ? path('vehicle_show', {id: vehicle.id}) : path('vehicle_index'), title: vehicle.id ? vehicle.plateLabel ~ ' · ' ~ vehicle.name : 'Nuovo veicolo', actions: actions}) }}
+
+    <div class="card-box" style="max-width: 960px">
+        {{ form_start(form) }}
+            <div class="row">
+                <div class="col-md-3">{{ form_row(form.plate) }}</div>
+                <div class="col-md-3">{{ form_row(form.make) }}</div>
+                <div class="col-md-3">{{ form_row(form.model) }}</div>
+                <div class="col-md-3">{{ form_row(form.version) }}</div>
+                <div class="col-md-3">{{ form_row(form.fuel) }}</div>
+                <div class="col-md-2">{{ form_row(form.year) }}</div>
+                <div class="col-md-4">{{ form_row(form.vin) }}</div>
+                <div class="col-md-3">{{ form_row(form.km) }}</div>
+                <div class="col-md-4">{{ form_row(form.revisionDue) }}</div>
+                <div class="col-md-8">{{ form_row(form.owner) }}</div>
+                <div class="col-12">{{ form_row(form.notes) }}</div>
+            </div>
+            <div class="form-actions">
+                <a class="btn btn-light" href="{{ vehicle.id ? path('vehicle_show', {id: vehicle.id}) : path('vehicle_index') }}">Annulla</a>
+                <button class="btn btn-primary"><i class="fa fa-check"></i> Salva</button>
+            </div>
+        {{ form_end(form) }}
+    </div>
+{% endblock %}

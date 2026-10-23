@@ -1,0 +1,28 @@
+{% extends 'tablet/base.html.twig' %}
+
+{% block title %}Lavoro completato{% endblock %}
+
+{% block body %}
+    {% set token = csrf_token('submit') %}
+    {% set missing = task.checklist|filter(c => not c.done)|length %}
+    <div class="op-body op-center">
+        <section class="op-panel op-done">
+            <span class="op-check op-check-xl"><i class="fa fa-check"></i></span>
+            <div class="op-cond op-h1 mt-3">Lavoro completato</div>
+            <div style="font-size: 1.2rem">{{ task.title }} · {{ task.workOrder.vehicle.name }} <span class="op-mut">{{ task.workOrder.vehicle.plateLabel }}</span></div>
+            <div class="op-stats">
+                <div class="op-stat"><div class="op-h">Tempo effettivo</div><div class="op-cond{{ task.overEstimate ? ' text-danger' }}">{{ task.workedSeconds|duration }}</div></div>
+                <div class="op-stat"><div class="op-h">Stimato</div><div class="op-cond">{{ task.estimatedMinutes|minutes }}</div></div>
+                <div class="op-stat"><div class="op-h">Controlli</div><div class="op-cond">{{ task.checklistDone }}/{{ task.checklist|length }}</div></div>
+            </div>
+            {% if missing %}<div class="op-banner justify-content-center mb-3">{{ missing }} {{ missing == 1 ? 'controllo non spuntato' : 'controlli non spuntati' }}: l'ufficio li vedrà nella scheda</div>{% endif %}
+            {% if task.workOrder.status == 'READY' %}<div class="op-banner op-ok justify-content-center mb-3"><i class="fa fa-flag-checkered"></i> Era l'ultimo lavoro: l'auto è pronta, l'ufficio avvisa il cliente</div>{% endif %}
+            <div class="op-grid2">
+                <a class="op-btn op-btn-xl op-btn-g" href="{{ path('tablet_list') }}">I miei lavori</a>
+                {% if next %}
+                    <form method="post" action="{{ path('tablet_start', {id: next.id}) }}"><input type="hidden" name="_token" value="{{ token }}"><button class="op-btn op-btn-xl w-100">Avvia: {{ next.title }}</button></form>
+                {% endif %}
+            </div>
+        </section>
+    </div>
+{% endblock %}

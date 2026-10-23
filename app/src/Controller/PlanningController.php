@@ -1,0 +1,139 @@
+<?php
+
+namespace App\Controller;
+
+use App\Entity\Mechanic;
+use App\Entity\Task;
+use App\Entity\Workstation;
+use App\Form\TaskType;
+use App\Repository\TaskRepository;
+use App\Service\ActivityLogger;
+use App\Service\CalendarPlanner;
+use App\Service\DayPlanner;
+use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
+
+#[IsGranted('ROLE_OFFICE')]
+class PlanningController extends AppController
+{
+    #[Route('/planning', name: 'planning')]
+    public function index(Request $request, DayPlanner $planner, TaskRepository $tasks): Response
+    {
+        $day = $this->dateParam($request->query->get('day'), 'today');
+        $view = $request->query->get('view') === 'post' ? 'post' : 'mech';
+        if (in_array($request->query->get('mode'), ['week', 'month'], true)) {
+            return $this->redirectToRoute('planning_calendar', $request->query->all());
+        }
+        $monday = $day->modify('monday this week');
+
+        return $this->render('planning/index.html.twig', [
+            'day' => $day,
+            'view' => $view,
+            'grid' => $planner->day($day, $view),
+            'backlog' => $tasks->findUnscheduled(),
+            'days' => array_map(fn (int $i) => $monday->modify("+$i days"), range(0, 5)),
+            'today' => new \DateTimeImmutable('today'),
+        ]);
+    }
+
+    /**
+     * Calendario dei lavori: settimana (righe = meccanici, colonne = giorni) o mese (griglia classica).
+     */
+    #[Route('/planning/calendar', name: 'planning_calendar')]
+    public function calendar(Request $request, CalendarPlanner $calendar): Response
+    {
+        $date = $this->dateParam($request->query->get('day'), 'today');
+        $mode = $request->query->get('mode') === 'month' ? 'month' : 'week';
+        if ($mode === 'week') {
+            $from = $date->modify('monday this week');
+            $to = $from->modify('+7 days');
+        } else {
+            $first = $date->modify('first day of this month');
+            $from = $first->modify('monday this week');
+            $to = $first->modify('last day of this month')->modify('sunday this week')->modify('+1 day');
+        }
+        $data = $calendar->range($from, $to);
+        // la domenica si vede solo se c'è qualcosa
+        $sunday = $from->modify('+6 days')->format('Y-m-d');
+        $showSunday = $mode === 'month' || $data['days'][$sunday]['items'] || $data['days'][$sunday]['deliveries'];
+
+        return $this->render('planning/calendar.html.twig', [
+            'mode' => $mode,
+            'day' => $date,
+            'from' => $from,
+            'to' => $to->modify('-1 day'),
+            'days' => $showSunday ? $data['days'] : array_filter($data['days'], fn ($d) => $d['date']->format('N') !== '7'),
+            'mechanics' => $data['mechanics'],
+            'unassigned' => array_reduce($data['days'], fn ($c, $d) => $c || array_filter($d['items'], fn ($i) => $i['mechanicKey'] === 0), false),
+            'today' => new \DateTimeImmutable('today'),
+            'prev' => $mode === 'week' ? $from->modify('-7 days') : $date->modify('first day of previous month'),
+            'next' => $mode === 'week' ? $from->modify('+7 days') : $date->modify('first day of next month'),
+        ]);
+    }
+
+    /** Modale "Pianifica": meccanico, postazione, orario e durata */
+    #[Route('/tasks/{id}/plan', name: 'task_plan', requirements: ['id' => '\d+'])]
+    public function plan(Request $request, Task $task, EntityManagerInterface $em, ActivityLogger $logger): Response
+    {
+        if (!$task->getPlannedStart() && $request->query->get('day')) {
+            $start = $this->entityDate($request->query->get('day'), 'today')->setTime(8, 0);
+            $task->setPlannedStart($start);
+        }
+        $form = $this->createForm(TaskType::class, $task, ['plan_only' => true]);
+        $form->handleRequest($request);
+        if ($form->isSubmitted() && $form->isValid()) {
+            $logger->order($task->getWorkOrder(), 'Pianificata: '.$task->getTitle().$this->planText($task), $this->user());
+            $em->flush();
+            $this->addFlash('success', 'Lavorazione pianificata');
+
+            return $this->redirectToRoute('planning', ['day' => ($task->getPlannedStart() ?? new \DateTime())->format('Y-m-d')]);
+        }
+
+        return $this->render('planning/_plan_form.html.twig', ['form' => $form, 'task' => $task]);
+    }
+
+    /** Trascinamento sul planning: nuovo orario e nuova riga (meccanico o postazione) */
+    #[Route('/planning/move', name: 'planning_move', methods: ['POST'])]
+    public function move(Request $request, EntityManagerInterface $em, ActivityLogger $logger): JsonResponse
+    {
+        $this->checkToken($request);
+        $task = $em->find(Task::class, $request->request->getInt('task'));
+        $start = \DateTime::createFromFormat('Y-m-d H:i', (string) $request->request->get('start'));
+        if (!$task || !$start || !in_array($task->getStatus(), [Task::TODO, Task::PAUSED], true)) {
+            return new JsonResponse(['error' => 'Questa lavorazione non si può spostare.'], 400);
+        }
+        $task->setPlannedStart($start);
+        if ($request->request->has('mechanic')) {
+            $id = $request->request->getInt('mechanic');
+            $task->setMechanic($id ? $em->find(Mechanic::class, $id) : null);
+        }
+        if ($request->request->has('workstation')) {
+            $id = $request->request->getInt('workstation');
+            $task->setWorkstation($id ? $em->find(Workstation::class, $id) : null);
+        }
+        $logger->order($task->getWorkOrder(), 'Pianificata: '.$task->getTitle().$this->planText($task), $this->user());
+        $em->flush();
+
+        return new JsonResponse(['ok' => true]);
+    }
+
+    private function planText(Task $task): string
+    {
+        $parts = [];
+        if ($task->getPlannedStart()) {
+            $parts[] = $task->getPlannedStart()->format('d/m H:i');
+        }
+        if ($task->getMechanic()) {
+            $parts[] = $task->getMechanic()->getName();
+        }
+        if ($task->getWorkstation()) {
+            $parts[] = $task->getWorkstation()->getName();
+        }
+
+        return $parts ? ' ('.implode(', ', $parts).')' : '';
+    }
+}

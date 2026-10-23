@@ -1,0 +1,59 @@
+{% extends 'tablet/base.html.twig' %}
+
+{% block title %}Chi sta lavorando?{% endblock %}
+
+{% block body %}
+    <div class="op-login">
+        <aside class="op-login-side">
+            <div class="d-flex align-items-center gap-3">
+                <span class="op-logo"><i class="fa fa-wrench"></i></span>
+                <div><div class="op-cond" style="font-size: 2rem; letter-spacing: 2px; line-height: 1">OFFICINA</div><div class="op-mut" style="letter-spacing: 1.4px; font-size: 0.75rem">AUTOFFICINA · OFFICINA</div></div>
+            </div>
+            <div>
+                <div class="op-cond op-bigclock" data-clock="{{ now|date('H:i:s') }}">{{ now|date('G:i') }}</div>
+                <div style="font-size: 1.25rem; font-weight: 600; margin-top: 10px">{{ now|long_date|replace({(now|date('Y')): ''})|capitalize }}</div>
+            </div>
+            <div class="d-flex gap-3 flex-wrap">
+                {% if is_granted('ROLE_OFFICE') %}<a class="op-link" href="{{ path('homepage') }}">Torna all'ufficio</a>{% endif %}
+                <a class="op-link" href="{{ path('app_logout') }}">Scollega il tablet</a>
+            </div>
+        </aside>
+        <main class="op-login-main">
+            <h1 class="op-cond op-h1">Chi sta lavorando?</h1>
+            <div class="op-tiles">
+                {% for t in tiles %}
+                    {% set m = t.mechanic %}
+                    <form method="post" action="{{ path('tablet_login', {id: m.id}) }}"{% if m.hasPin %} data-pin-form{% endif %}>
+                        <input type="hidden" name="_token" value="{{ csrf_token('submit') }}">
+                        <input type="hidden" name="pin" value="">
+                        <button class="op-tile">
+                            <span class="mav mc-{{ m.color }}" style="width: 128px; height: 128px; font-size: 3rem">{{ m.initials }}</span>
+                            <span class="op-cond" style="font-size: 2.4rem; text-transform: uppercase; letter-spacing: 1px">{{ m.name }}</span>
+                            <span style="font-size: 1.05rem; font-weight: 600">
+                                {%- if t.current -%}
+                                    {{ t.current.status == 'RUNNING' ? 'In corso' : 'In pausa' }}: {{ t.current.title }} · {{ t.current.workOrder.vehicle.name }}
+                                {%- else -%}
+                                    Nessun lavoro in corso
+                                {%- endif -%}
+                            </span>
+                            <span class="op-mut">{{ t.todo }} {{ t.todo == 1 ? 'lavoro' : 'lavori' }} ancora da chiudere oggi{{ m.hasPin ? ' · con PIN' }}</span>
+                        </button>
+                    </form>
+                {% else %}
+                    <div class="op-mut">Nessun meccanico attivo: aggiungili dall'ufficio.</div>
+                {% endfor %}
+            </div>
+        </main>
+    </div>
+
+    <div class="op-sheet-bg" id="pinSheet" hidden>
+        <div class="op-sheet op-pin" role="dialog" aria-label="PIN">
+            <div class="op-cond" style="font-size: 2rem; text-transform: uppercase">Il tuo PIN</div>
+            <div class="op-pin-dots" aria-live="polite"><i></i><i></i><i></i><i></i></div>
+            <div class="op-pin-pad">
+                {% for n in [1, 2, 3, 4, 5, 6, 7, 8, 9] %}<button type="button" data-digit="{{ n }}">{{ n }}</button>{% endfor %}
+                <button type="button" data-pin-cancel>Annulla</button><button type="button" data-digit="0">0</button><button type="button" data-pin-back aria-label="Cancella"><i class="fa fa-delete-left"></i></button>
+            </div>
+        </div>
+    </div>
+{% endblock %}

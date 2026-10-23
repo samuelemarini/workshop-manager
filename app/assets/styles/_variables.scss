@@ -1,0 +1,42 @@
+// Palette Officina: rosso officina su nero
+$color_primary: #c8102e;
+$color_dark: #8a0a1c;
+$color_light: #fbe8eb;
+
+$ink: #1a1718;
+$muted: #625c5d;
+$line: #ebe7e6;
+$surface: #ffffff;
+$canvas: #f2f1f0;
+
+$success: #1f8a5a;
+$warning: #d98a00;
+$danger: #c8102e;
+$info: #1d3c94;
+$neutral: #8c8485;
+
+$sidebar-width: 260px;
+$sidebar-bg-top: #0c0b0c;
+$sidebar-bg-bottom: #221e1f;
+
+$radius: 14px;
+$shadow: 0 12px 36px -14px rgba(26, 23, 24, 0.22), 0 4px 12px -6px rgba(0, 0, 0, 0.06);
+
+$font-condensed: "Barlow Condensed", system-ui, sans-serif;
+
+// Bootstrap
+$primary: $color_primary;
+$success: $success;
+$warning: $warning;
+$danger: $danger;
+$info: $info;
+$font-family-sans-serif: Barlow, system-ui, sans-serif;
+$body-bg: $canvas;
+$body-color: $ink;
+$border-radius: 10px;
+$border-radius-lg: 14px;
+$input-border-color: #ddd7d6;
+$input-focus-border-color: rgba($color_primary, 0.6);
+$input-focus-box-shadow: 0 0 0 3px rgba($color_primary, 0.12);
+$link-color: #b40f29;
+$link-hover-color: #7a0918;

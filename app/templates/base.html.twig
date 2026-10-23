@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="it">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+        <meta name="theme-color" content="#0c0b0c">
+        <title>{% block title %}{{ app_name }}{% endblock %}{% if block('title') != app_name %} · {{ app_name }}{% endif %}</title>
+        <link rel="icon" type="image/svg+xml" href="{{ asset('build/images/favicon.svg') }}">
+        {% block stylesheets %}
+            {{ encore_entry_link_tags('app') }}
+        {% endblock %}
+    </head>
+
+    <body>
+        {% import '_macros.html.twig' as ui %}
+        {% if app.user %}
+            {% set route = app.current_route ?? '' %}
+            <header class="mobile-bar">
+                <a class="brand" href="{{ path('homepage') }}"><span class="logo"><i class="fa fa-wrench"></i></span>Officina</a>
+                <button class="sidebar-toggle" id="sidebarToggle" aria-label="Apri menu" aria-controls="sidebar" aria-expanded="false"><i class="fa fa-bars"></i></button>
+            </header>
+
+            <aside class="sidebar" id="sidebar">
+                <a class="sidebar-header" href="{{ path('homepage') }}">
+                    <span class="logo"><i class="fa fa-wrench fs-5"></i></span>
+                    <span class="sidebar-brand-name">Officina<small>Autofficina</small></span>
+                </a>
+
+                <ul class="sidebar-nav">
+                    <li><a class="nav-link{{ route == 'homepage' ? ' active' }}" href="{{ path('homepage') }}"><i class="fa fa-gauge-high"></i><span>Dashboard</span></a></li>
+
+                    <li class="nav-section">Officina</li>
+                    <li><a class="nav-link{{ route starts with 'planning' or route == 'task_plan' ? ' active' }}" href="{{ path('planning') }}"><i class="fa fa-calendar-day"></i><span>Planning meccanici</span></a></li>
+                    <li><a class="nav-link{{ route == 'board' ? ' active' }}" href="{{ path('board') }}"><i class="fa fa-table-columns"></i><span>Bacheca lavori</span>{% if proposed_count() %}<span class="badge rounded-pill bg-danger" title="Lavori extra da autorizzare">{{ proposed_count() }}</span>{% endif %}</a></li>
+                    <li><a class="nav-link{{ route starts with 'order_' or route starts with 'task_' or route starts with 'part_' ? ' active' }}" href="{{ path('order_index') }}"><i class="fa fa-clipboard-list"></i><span>Ordini di lavoro</span></a></li>
+                    <li><a class="nav-link" href="{{ path('tablet') }}"><i class="fa fa-tablet-screen-button"></i><span>Postazione tablet</span></a></li>
+
+                    <li class="nav-section">Anagrafiche</li>
+                    <li><a class="nav-link{{ route starts with 'customer_' ? ' active' }}" href="{{ path('customer_index') }}"><i class="fa fa-user-group"></i><span>Clienti</span></a></li>
+                    <li><a class="nav-link{{ route starts with 'vehicle_' ? ' active' }}" href="{{ path('vehicle_index') }}"><i class="fa fa-car-side"></i><span>Veicoli</span></a></li>
+
+                    <li class="nav-section">Squadra</li>
+                    <li><a class="nav-link{{ route starts with 'mechanic_' ? ' active' }}" href="{{ path('mechanic_index') }}"><i class="fa fa-screwdriver-wrench"></i><span>Meccanici e ore</span></a></li>
+
+                    {% if is_granted('ROLE_ADMIN') %}
+                        <li class="nav-section">Amministrazione</li>
+                        <li><a class="nav-link{{ route starts with 'user_' ? ' active' }}" href="{{ path('user_index') }}"><i class="fa fa-users"></i><span>Utenti</span></a></li>
+                        <li><a class="nav-link{{ route starts with 'settings_' ? ' active' }}" href="{{ path('settings_index') }}"><i class="fa fa-sliders"></i><span>Impostazioni</span></a></li>
+                    {% endif %}
+                </ul>
+
+                <div class="sidebar-footer">
+                    <div class="user-info">
+                        <span class="avatar">{{ app.user.name|first|upper }}{{ app.user.surname|first|upper }}</span>
+                        <div>
+                            <div class="user-name">{{ app.user.fullName }}</div>
+                            <div class="user-role">{{ app.user.customroles|map(r => r.name)|join(', ') }}</div>
+                        </div>
+                    </div>
+                    <div class="user-actions">
+                        <a href="{{ path('user_edit', {id: app.user.id}) }}" title="Profilo"><i class="fa fa-user-gear"></i> Profilo</a>
+                        <a href="{{ path('app_logout') }}" title="Esci"><i class="fa fa-right-from-bracket"></i> Esci</a>
+                    </div>
+                </div>
+            </aside>
+        {% endif %}
+
+        <main class="main-content{% if not app.user %} no-sidebar{% endif %}">
+            {% set flashes = app.flashes %}
+            {% if flashes %}
+                <div class="flash-stack">
+                    {% for type, messages in flashes %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ type }} alert-dismissible fade show" role="alert">
+                                <i class="fa {{ type == 'success' ? 'fa-circle-check' : (type == 'danger' ? 'fa-circle-exclamation' : (type == 'warning' ? 'fa-triangle-exclamation' : 'fa-circle-info')) }} me-2"></i>{{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Chiudi"></button>
+                            </div>
+                        {% endfor %}
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            {% block body %}{% endblock %}
+        </main>
+
+        {% if app.user %}
+            <div class="modal fade" id="appModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title"></h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Chiudi"></button>
+                        </div>
+                        <div class="modal-body"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered modal-sm">
+                    <div class="modal-content">
+                        <div class="modal-body text-center pt-4">
+                            <i class="fa fa-circle-question text-primary fs-1 mb-3"></i>
+                            <p class="confirm-text mb-0 fw-semibold"></p>
+                        </div>
+                        <div class="modal-footer justify-content-center border-0 pt-0">
+                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Annulla</button>
+                            <button type="button" class="btn btn-primary confirm-yes">Conferma</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="loader-overlay"><div class="spinner"></div></div>
+
+        {% block javascripts %}
+            {{ encore_entry_script_tags('app') }}
+        {% endblock %}
+    </body>
+</html>

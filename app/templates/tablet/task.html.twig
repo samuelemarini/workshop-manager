@@ -1,0 +1,159 @@
+{% extends 'tablet/base.html.twig' %}
+{% import '_macros.html.twig' as ui %}
+
+{% block title %}{{ task.title }}{% endblock %}
+
+{% block back %}
+    <a class="op-gbtn ms-3" href="{{ path('tablet_list') }}"><i class="fa fa-chevron-left"></i> I miei lavori</a>
+{% endblock %}
+
+{% block body %}
+    {% set o = task.workOrder %}
+    {% set token = csrf_token('submit') %}
+    {% set mine = task.mechanic == me or task.mechanic is null %}
+    <div class="op-body op-work">
+        <section class="op-panel op-left">
+            <div>
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <span class="plate op-plate"><span>{{ o.vehicle.plateLabel }}</span></span>
+                    <span style="font-size: 1.1rem; font-weight: 600">{{ o.vehicle.name }}{{ o.vehicle.version ? ' ' ~ o.vehicle.version }}</span>
+                </div>
+                <div class="op-cond op-title">{{ task.title }}</div>
+                <div class="op-mut">{{ o.code }}{{ task.workstation ? ' · ' ~ task.workstation.name }}{{ o.kmIn ? ' · ' ~ o.kmIn|num ~ ' km' }}{{ o.promisedAt ? ' · consegna ' ~ o.promisedAt|when }}</div>
+            </div>
+            {% if o.customerRequest or task.description %}
+                <div class="op-quote">
+                    {% if task.description %}<div><b>Da fare:</b> {{ task.description }}</div>{% endif %}
+                    {% if o.customerRequest %}<div><span class="op-mut fw-bold">Il cliente dice:</span> “{{ o.customerRequest }}”</div>{% endif %}
+                </div>
+            {% endif %}
+            {% if task.status == 'PAUSED' %}
+                <div class="op-banner"><i class="fa fa-pause"></i> In pausa · {{ task.pauseReason }}</div>
+            {% elseif task.status == 'PROPOSED' %}
+                <div class="op-banner"><i class="fa fa-phone"></i> Aspetta l'OK del cliente</div>
+            {% elseif not mine %}
+                <div class="op-banner"><i class="fa fa-user"></i> Assegnata a {{ task.mechanic.name }}</div>
+            {% endif %}
+
+            <div class="op-timerbox">
+                <div class="op-h mb-1">Tempo effettivo</div>
+                <div class="op-cond op-timer{{ task.overEstimate ? ' is-over' }}{{ task.status == 'PAUSED' ? ' is-paused' }}" data-timer="{{ task.workedSeconds }}" data-format="hms" data-estimate="{{ task.estimatedMinutes * 60 }}"{% if task.status != 'RUNNING' %} data-paused{% endif %}>{{ task.workedSeconds|duration }}:00</div>
+                <div class="d-flex justify-content-between gap-2 my-2" style="font-size: 1.05rem">
+                    <span class="op-mut">stimate {{ task.estimatedMinutes|minutes }} h</span>
+                    <span class="fw-bold" data-delta></span>
+                </div>
+                {% set pct = task.estimatedMinutes ? min(100, (task.workedSeconds / 60 / task.estimatedMinutes * 100)|round) : 0 %}
+                <div class="op-prog"><span style="width: {{ pct }}%" data-progress></span></div>
+            </div>
+
+            {% if task.status == 'RUNNING' %}
+                <div class="op-grid2">
+                    <button type="button" class="op-big op-pause" data-sheet-open="#pauseSheet"><i class="fa fa-pause"></i> Pausa</button>
+                    <form method="post" action="{{ path('tablet_finish', {id: task.id}) }}" data-confirm-tap="Tocca ancora per terminare"><input type="hidden" name="_token" value="{{ token }}"><button class="op-big op-stop w-100"><i class="fa fa-check"></i> Termina</button></form>
+                </div>
+                {{ include('tablet/_pause_sheet.html.twig') }}
+            {% elseif task.status == 'PAUSED' %}
+                <div class="op-grid2">
+                    <form method="post" action="{{ path('tablet_start', {id: task.id}) }}"><input type="hidden" name="_token" value="{{ token }}"><button class="op-big op-go w-100"><i class="fa fa-play"></i> Riprendi</button></form>
+                    <form method="post" action="{{ path('tablet_finish', {id: task.id}) }}" data-confirm-tap="Tocca ancora per terminare"><input type="hidden" name="_token" value="{{ token }}"><button class="op-big op-stop w-100"><i class="fa fa-check"></i> Termina</button></form>
+                </div>
+            {% elseif task.status == 'TODO' %}
+                <form method="post" action="{{ path('tablet_start', {id: task.id}) }}"><input type="hidden" name="_token" value="{{ token }}"><button class="op-big op-go w-100"><i class="fa fa-play"></i> Avvia il lavoro</button></form>
+            {% else %}
+                <div class="op-big op-off">{{ task.statusLabel }}</div>
+            {% endif %}
+        </section>
+
+        <section class="op-panel op-right">
+            <div class="op-tabs" role="tablist">
+                <button type="button" role="tab" class="{{ tab == 'check' ? 'on' }}" data-tab="check">Controlli <span class="op-tabcount" data-check-count>{{ task.checklistDone }}/{{ task.checklist|length }}</span></button>
+                <button type="button" role="tab" class="{{ tab == 'parts' ? 'on' }}" data-tab="parts">Ricambi</button>
+                <button type="button" role="tab" class="{{ tab == 'note' ? 'on' }}" data-tab="note">Note e foto</button>
+            </div>
+            <div class="op-tabbody">
+                <div data-pane="check"{% if tab != 'check' %} hidden{% endif %}>
+                    {% for c in task.checklist %}
+                        <button type="button" class="op-chk{{ c.done ? ' on' }}" aria-pressed="{{ c.done ? 'true' : 'false' }}" data-check-url="{{ path('tablet_check', {id: task.id, index: loop.index0}) }}">
+                            <span class="op-box"><i class="fa fa-check"></i></span>{{ c.label }}
+                        </button>
+                    {% else %}
+                        <div class="op-mut py-3" style="font-size: 1.05rem">Nessun controllo previsto per questa lavorazione.</div>
+                    {% endfor %}
+                </div>
+
+                <div data-pane="parts"{% if tab != 'parts' %} hidden{% endif %}>
+                    {% set parts = o.parts|filter(p => p.task == task or p.task is null) %}
+                    {% for p in parts %}
+                        <div class="op-row">
+                            <div class="flex-grow-1" style="min-width: 0; font-size: 1.1rem; font-weight: 600">{{ p.description }}<div class="op-mut fw-normal">{{ p.unit }}{{ p.code ? ' · ' ~ p.code }}{{ p.missing ? ' · ' ~ p.statusLabel|lower }}</div></div>
+                            <div class="op-step" data-qty-url="{{ path('tablet_part_qty', {id: p.id}) }}">
+                                <button type="button" data-delta="-1" aria-label="Togli uno">−</button>
+                                <b data-qty>{{ p.quantity|num }}</b>
+                                <button type="button" data-delta="1" aria-label="Aggiungi uno">+</button>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="op-mut pb-2">Nessun ricambio registrato su questo lavoro.</div>
+                    {% endfor %}
+                    <form class="op-addpart" method="post" action="{{ path('tablet_part_add', {id: task.id}) }}">
+                        <input type="hidden" name="_token" value="{{ token }}">
+                        <label class="op-lbl" for="partDesc">Aggiungi un ricambio</label>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <input class="op-input" style="flex: 1 1 240px" id="partDesc" name="description" placeholder="es. Filtro olio" required>
+                            <input class="op-input" style="flex: 0 0 90px" name="quantity" value="1" inputmode="decimal" aria-label="Quantità">
+                            <select class="op-input" style="flex: 0 0 90px" name="unit" aria-label="Unità">{% for u in constant('App\\Entity\\Part::UNITS') %}<option>{{ u }}</option>{% endfor %}</select>
+                        </div>
+                        <div class="op-grid2 mt-2">
+                            <button class="op-btn op-btn-w" name="missing" value="0"><i class="fa fa-box"></i> Preso a magazzino</button>
+                            <button class="op-btn op-btn-g" name="missing" value="1"><i class="fa fa-cart-shopping"></i> Manca: da ordinare</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div data-pane="note"{% if tab != 'note' %} hidden{% endif %}>
+                    <form method="post" action="{{ path('tablet_note', {id: task.id}) }}" class="mb-3">
+                        <input type="hidden" name="_token" value="{{ token }}">
+                        <div class="op-notegrid">
+                            <div><label class="op-lbl" for="km">Km letti</label><input class="op-input op-input-xl" id="km" name="km" inputmode="numeric" value="{{ o.kmIn ? o.kmIn|num }}" placeholder="es. 59870"></div>
+                            <div><label class="op-lbl" for="opNote">Note per l'ufficio</label><textarea class="op-input op-ta" id="opNote" name="notes" placeholder="Scrivi o detta una nota…">{{ task.notes }}</textarea></div>
+                        </div>
+                        <div class="text-end mt-2"><button class="op-btn op-btn-w">Salva</button></div>
+                    </form>
+                    <div class="op-lbl">Foto</div>
+                    <div class="op-photos">
+                        {% for a in photos %}
+                            <a class="op-photo" href="{{ path('attachment_view', {id: a.id}) }}" target="_blank"><img src="{{ path('attachment_view', {id: a.id}) }}" alt="{{ a.originalName }}" loading="lazy"><span>{{ a.task ? a.task.title : 'Ingresso' }}</span></a>
+                        {% endfor %}
+                        <form class="op-photo op-photo-add" method="post" action="{{ path('tablet_photo', {id: task.id}) }}" enctype="multipart/form-data">
+                            <input type="hidden" name="_token" value="{{ token }}">
+                            <label><i class="fa fa-camera"></i><span>Scatta foto</span><input type="file" name="files[]" accept="image/*" capture="environment" data-autosubmit hidden></label>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <button type="button" class="op-btn op-btn-g op-report" data-sheet-open="#reportSheet"><i class="fa fa-triangle-exclamation"></i> Segnala un problema o un lavoro extra</button>
+        </section>
+    </div>
+
+    <div class="op-sheet-bg" id="reportSheet" hidden>
+        <form class="op-sheet" method="post" action="{{ path('tablet_report', {id: task.id}) }}" enctype="multipart/form-data" role="dialog" aria-label="Segnalazione all'ufficio">
+            <input type="hidden" name="_token" value="{{ token }}">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="op-cond op-sheet-title">Segnala all'ufficio</div>
+                <button type="button" class="op-gbtn" data-sheet-close>Annulla</button>
+            </div>
+            <div class="op-chips mb-3">
+                <input type="radio" name="kind" id="kOk" value="ok" checked><label for="kOk">Serve l'OK del cliente</label>
+                <input type="radio" name="kind" id="kUrgent" value="urgent"><label for="kUrgent">Problema di sicurezza</label>
+                <input type="radio" name="kind" id="kInfo" value="info"><label for="kInfo">Solo per informazione</label>
+            </div>
+            <label class="op-lbl" for="reportText">Cosa hai trovato</label>
+            <textarea class="op-input op-ta" id="reportText" name="text" required placeholder="es. Spazzole tergicristallo usurate, consiglio di sostituirle"></textarea>
+            <div class="op-grid2 mt-3">
+                <div><label class="op-lbl" for="reportMin">Tempo per farlo (minuti)</label><input class="op-input" id="reportMin" name="minutes" inputmode="numeric" placeholder="30"></div>
+                <div><label class="op-lbl">Foto</label><label class="op-btn op-btn-g w-100"><i class="fa fa-camera"></i> <span data-file-label>Aggiungi foto</span><input type="file" name="files[]" accept="image/*" capture="environment" hidden></label></div>
+            </div>
+            <button class="op-btn op-btn-xl w-100 mt-3">Invia all'ufficio</button>
+        </form>
+    </div>
+{% endblock %}

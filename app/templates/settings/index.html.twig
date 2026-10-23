@@ -1,0 +1,87 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Impostazioni{% endblock %}
+
+{% block body %}
+    {{ include('_page_header.html.twig', {icon: 'fa-sliders', title: 'Impostazioni', subtitle: 'Orari dell\'officina, postazioni e lavorazioni tipo · le voci già usate si disattivano, non si cancellano'}) }}
+
+    <div class="row g-4">
+        <div class="col-xl-5 d-flex flex-column gap-4">
+            <section class="card-box mb-0">
+                <div class="card-title"><span><i class="fa fa-clock"></i> Officina</span></div>
+                <form method="post" action="{{ path('settings_workshop') }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('submit') }}">
+                    <div class="row">
+                        <div class="col-6 mb-3"><label class="form-label" for="day_start">Apertura</label><input class="form-control" type="time" id="day_start" name="day_start" value="{{ settings.day_start }}"></div>
+                        <div class="col-6 mb-3"><label class="form-label" for="day_end">Chiusura</label><input class="form-control" type="time" id="day_end" name="day_end" value="{{ settings.day_end }}"></div>
+                        <div class="col-6 mb-3"><label class="form-label" for="lunch_start">Pausa pranzo dalle</label><input class="form-control" type="time" id="lunch_start" name="lunch_start" value="{{ settings.lunch_start }}"></div>
+                        <div class="col-6 mb-3"><label class="form-label" for="lunch_end">alle</label><input class="form-control" type="time" id="lunch_end" name="lunch_end" value="{{ settings.lunch_end }}"></div>
+                        <div class="col-6 mb-3"><label class="form-label" for="labour_rate">Manodopera € / ora</label><input class="form-control" id="labour_rate" name="labour_rate" value="{{ settings.labour_rate }}" inputmode="decimal"></div>
+                    </div>
+                    <div class="mini text-muted mb-3">Orari e pausa disegnano il planning; la tariffa serve per i totali stimati e la scheda stampata.</div>
+                    <div class="text-end"><button class="btn btn-primary"><i class="fa fa-check"></i> Salva</button></div>
+                </form>
+            </section>
+
+            <section class="card-box mb-0">
+                <div class="card-title"><span><i class="fa fa-warehouse"></i> Postazioni</span></div>
+                <form class="d-flex gap-2 mb-3 flex-wrap" method="post" action="{{ path('settings_workstation_save') }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('submit') }}">
+                    <input class="form-control" style="flex: 1 1 140px" name="name" placeholder="Nuova postazione..." required aria-label="Nome">
+                    <input class="form-control" style="flex: 1 1 160px" name="description" placeholder="Descrizione" aria-label="Descrizione">
+                    <input class="form-control" style="max-width: 80px" type="number" name="sort" value="{{ (workstations|length + 1) * 10 }}" aria-label="Ordine">
+                    <button class="btn btn-primary"><i class="fa fa-plus"></i></button>
+                </form>
+                <table class="app-table">
+                    <tbody>
+                        {% for row in workstations %}
+                            <tr class="{{ row.cancel ? 'row-muted' }}">
+                                <td>
+                                    <form class="d-flex gap-2" method="post" action="{{ path('settings_workstation_save') }}">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('submit') }}">
+                                        <input type="hidden" name="id" value="{{ row.id }}">
+                                        <input class="form-control form-control-sm border-0 bg-transparent fw-semibold{{ row.cancel ? ' text-decoration-line-through' }}" name="name" value="{{ row.name }}" onchange="this.form.submit()" aria-label="Nome">
+                                        <input class="form-control form-control-sm border-0 bg-transparent" name="description" value="{{ row.description }}" onchange="this.form.submit()" aria-label="Descrizione">
+                                        <input class="form-control form-control-sm border-0 bg-transparent" style="max-width: 70px" type="number" name="sort" value="{{ row.sort }}" onchange="this.form.submit()" aria-label="Ordine">
+                                    </form>
+                                </td>
+                                <td class="actions">
+                                    <form method="post" action="{{ path('settings_workstation_toggle', {id: row.id}) }}">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('submit') }}">
+                                        <button class="btn btn-light btn-sm">{{ row.cancel ? 'Riattiva' : 'Disattiva' }}</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </section>
+        </div>
+
+        <div class="col-xl-7">
+            <section class="card-box mb-0">
+                <div class="card-title"><span><i class="fa fa-list-check"></i> Lavorazioni tipo</span><a class="btn btn-light btn-sm" href="#" data-modal="{{ path('settings_template_new') }}" data-title="Nuova lavorazione tipo"><i class="fa fa-plus"></i> Aggiungi</a></div>
+                <p class="mini text-muted">In accettazione si spuntano per creare le lavorazioni con tempo stimato e controlli già pronti.</p>
+                <table class="app-table">
+                    <thead><tr><th>Lavorazione</th><th class="num">Tempo</th><th class="num">Controlli</th><th></th></tr></thead>
+                    <tbody>
+                        {% for t in templates %}
+                            <tr class="{{ t.cancel ? 'row-muted' }}">
+                                <td class="fw-semibold{{ t.cancel ? ' text-decoration-line-through' }}">{{ t.name }}</td>
+                                <td class="num">{{ t.estimatedMinutes|minutes }}</td>
+                                <td class="num">{{ t.checklist|length }}</td>
+                                <td class="actions">
+                                    <a class="btn btn-light btn-icon btn-sm" href="#" data-modal="{{ path('settings_template_edit', {id: t.id}) }}" data-title="{{ t.name }}" aria-label="Modifica {{ t.name }}"><i class="fa fa-pen"></i></a>
+                                    <form class="d-inline" method="post" action="{{ path('settings_template_toggle', {id: t.id}) }}">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('submit') }}">
+                                        <button class="btn btn-light btn-sm">{{ t.cancel ? 'Riattiva' : 'Disattiva' }}</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </section>
+        </div>
+    </div>
+{% endblock %}

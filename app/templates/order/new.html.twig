@@ -1,0 +1,67 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Nuova accettazione{% endblock %}
+
+{% block body %}
+    {{ include('_page_header.html.twig', {back: path('board'), title: 'Nuova accettazione', subtitle: 'Veicolo, cliente e lavori da fare: dopo il salvataggio si assegnano meccanici e orari'}) }}
+
+    {{ form_start(form, {attr: {'data-acceptance': '', 'data-lookup-url': path('order_plate_lookup')}}) }}
+    <div class="row g-4">
+        <div class="col-xl-6 d-flex flex-column gap-4">
+            <section class="card-box mb-0">
+                <div class="card-title"><span><i class="fa fa-car-side"></i> Veicolo</span></div>
+                {{ form_row(form.vehicle) }}
+                <div data-new-vehicle>
+                    <div class="mini text-muted mb-2">Non in elenco? Scrivi la targa: se esiste già lo ritrovo io.</div>
+                    <div class="row">
+                        <div class="col-sm-4">{{ form_row(form.newPlate) }}</div>
+                        <div class="col-sm-4">{{ form_row(form.newMake) }}</div>
+                        <div class="col-sm-4">{{ form_row(form.newModel) }}</div>
+                        <div class="col-sm-8">{{ form_row(form.newVersion) }}</div>
+                        <div class="col-sm-4">{{ form_row(form.newYear) }}</div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-4">{{ form_row(form.kmIn) }}</div>
+                    <div class="col-sm-4">{{ form_row(form.fuelLevel) }}</div>
+                    <div class="col-sm-4 pt-sm-4">{{ form_row(form.courtesyCar) }}</div>
+                </div>
+                {{ form_row(form.intakeNotes) }}
+            </section>
+
+            <section class="card-box mb-0">
+                <div class="card-title"><span><i class="fa fa-user"></i> Cliente</span></div>
+                {{ form_row(form.customer) }}
+                <div class="row" data-new-customer>
+                    <div class="col-sm-7">{{ form_row(form.newCustomerName) }}</div>
+                    <div class="col-sm-5">{{ form_row(form.newCustomerPhone) }}</div>
+                </div>
+                <div class="mini text-muted">Scegliendo un veicolo già noto, il cliente si compila da solo con il proprietario.</div>
+            </section>
+        </div>
+
+        <div class="col-xl-6">
+            <section class="card-box mb-0">
+                <div class="card-title"><span><i class="fa fa-wrench"></i> Lavori da fare</span></div>
+                {{ form_row(form.customerRequest) }}
+                <label class="form-label">{{ form.templates.vars.label }}</label>
+                <div class="template-checks mb-3">
+                    {% for child in form.templates %}
+                        <div class="form-check">{{ form_widget(child) }}{{ form_label(child) }}</div>
+                    {% endfor %}
+                </div>
+                {% do form.templates.setRendered %}
+                {{ form_row(form.otherTask) }}
+                <div class="row">
+                    <div class="col-sm-6">{{ form_row(form.promisedAt) }}</div>
+                    <div class="col-sm-6">{{ form_row(form.quoteAmount) }}</div>
+                </div>
+                <div class="form-actions">
+                    <a class="btn btn-light" href="{{ path('board') }}">Annulla</a>
+                    <button class="btn btn-primary btn-lg"><i class="fa fa-check"></i> Crea l'ordine di lavoro</button>
+                </div>
+            </section>
+        </div>
+    </div>
+    {{ form_end(form) }}
+{% endblock %}

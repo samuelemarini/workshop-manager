@@ -1,0 +1,63 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Accesso{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    {{ encore_entry_link_tags('login') }}
+{% endblock %}
+
+{% block body %}
+    {% import '_macros.html.twig' as ui %}
+    <div class="login-page">
+        <section class="login-hero">
+            <div class="brand">
+                <span class="logo"><i class="fa fa-wrench"></i></span>
+                Gestionale officina
+            </div>
+            <div>
+                <h1>Ogni auto, ogni meccanico, ogni minuto.</h1>
+                <p>Chi sta lavorando su cosa, quanto manca, cosa aspetta ricambi o l'OK del cliente: l'officina in un colpo d'occhio, con i tempi presi dal tablet.</p>
+                <div class="modules">
+                    <span><i class="fa fa-calendar-day"></i> Planning meccanici</span>
+                    <span><i class="fa fa-table-columns"></i> Bacheca lavori</span>
+                    <span><i class="fa fa-clipboard-list"></i> Ordini di lavoro</span>
+                    <span><i class="fa fa-tablet-screen-button"></i> Tablet in officina</span>
+                </div>
+            </div>
+            <div class="foot">© {{ 'now'|date('Y') }} Gestionale officina</div>
+        </section>
+
+        <section class="login-panel">
+            <div class="login-card">
+                <h2>Bentornato</h2>
+                <p class="lead">Accedi con le tue credenziali</p>
+
+                {% if error %}
+                    <div class="alert alert-danger"><i class="fa fa-circle-exclamation me-2"></i>{{ error.messageKey|trans(error.messageData, 'security') }}</div>
+                {% endif %}
+
+                <form method="post" class="login-form">
+                    <div class="form-floating mb-3">
+                        <input type="text" value="{{ last_username }}" name="_username" id="inputUsername" class="form-control" placeholder="Username" autocomplete="username" required autofocus>
+                        <label for="inputUsername">Username</label>
+                    </div>
+                    <div class="form-floating mb-3 password-wrap">
+                        <input type="password" name="_password" id="inputPassword" class="form-control" placeholder="Password" autocomplete="current-password" required>
+                        <label for="inputPassword">Password</label>
+                        <button type="button" id="togglePassword" tabindex="-1" aria-label="Mostra password"><i class="fa fa-eye"></i></button>
+                    </div>
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+                    <button type="submit" class="btn btn-primary">Accedi <i class="fa fa-arrow-right"></i></button>
+                </form>
+
+                <div class="powered">Powered by <strong>Samuele Marini</strong></div>
+            </div>
+        </section>
+    </div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    {{ encore_entry_script_tags('login') }}
+{% endblock %}

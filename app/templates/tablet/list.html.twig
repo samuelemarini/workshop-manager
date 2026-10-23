@@ -1,0 +1,90 @@
+{% extends 'tablet/base.html.twig' %}
+{% import '_macros.html.twig' as ui %}
+
+{% block title %}I miei lavori{% endblock %}
+
+{% block body %}
+    <div class="op-body op-cols">
+        <section class="op-panel">
+            <h2 class="op-h">Lavoro in corso</h2>
+            {% if current %}
+                {% set o = current.workOrder %}
+                <div class="op-current">
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <span class="plate op-plate"><span>{{ o.vehicle.plateLabel }}</span></span>
+                        <span style="font-size: 1.1rem; font-weight: 600">{{ o.vehicle.name }}</span>
+                        <span class="op-mut">{{ o.code }}{{ current.workstation ? ' · ' ~ current.workstation.name }}</span>
+                    </div>
+                    <div class="op-cond op-title">{{ current.title }}</div>
+                    <div class="d-flex align-items-baseline gap-3">
+                        <span class="op-cond op-timer-md{{ current.overEstimate ? ' is-over' }}" data-timer="{{ current.workedSeconds }}" data-format="hms"{% if current.status != 'RUNNING' %} data-paused{% endif %}>{{ current.workedSeconds|duration }}</span>
+                        <span class="op-mut">di {{ current.estimatedMinutes|minutes }} stimate</span>
+                    </div>
+                    {% set pct = current.estimatedMinutes ? min(100, (current.workedSeconds / 60 / current.estimatedMinutes * 100)|round) : 0 %}
+                    <div class="op-prog my-3"><span style="width: {{ pct }}%"></span></div>
+                    {% if current.status == 'PAUSED' %}<div class="op-banner mb-3"><i class="fa fa-pause"></i> In pausa · {{ current.pauseReason }}</div>{% endif %}
+                    <div class="op-grid2">
+                        <a class="op-btn op-btn-xl" href="{{ path('tablet_task', {id: current.id}) }}">Apri il lavoro</a>
+                        {% if current.status == 'RUNNING' %}
+                            <button type="button" class="op-btn op-btn-xl op-pause" data-sheet-open="#pauseSheet">Pausa</button>
+                        {% else %}
+                            <form method="post" action="{{ path('tablet_start', {id: current.id}) }}"><input type="hidden" name="_token" value="{{ csrf_token('submit') }}"><button class="op-btn op-btn-xl op-btn-w w-100">Riprendi</button></form>
+                        {% endif %}
+                    </div>
+                </div>
+                {% if current.status == 'RUNNING' %}{{ include('tablet/_pause_sheet.html.twig', {task: current}) }}{% endif %}
+            {% else %}
+                <div class="op-empty">Nessun lavoro in corso: avvia il prossimo qui sotto</div>
+            {% endif %}
+
+            <h2 class="op-h">Prossimi lavori</h2>
+            {% for t in todo %}
+                {% set o = t.workOrder %}
+                <div class="op-row">
+                    <span class="op-time">{{ t.plannedStart and t.plannedStart|date('Ymd') == 'now'|date('Ymd') ? t.plannedStart|date('G:i') : '—' }}</span>
+                    <div class="flex-grow-1" style="min-width: 0">
+                        <div class="d-flex align-items-center gap-2 flex-wrap"><span class="plate op-plate-sm"><span>{{ o.vehicle.plateLabel }}</span></span><span class="op-mut">{{ o.vehicle.name }}</span></div>
+                        <div class="op-row-title">{{ t.title }} <span class="op-mut fw-normal">· {{ t.estimatedMinutes|minutes }} h</span></div>
+                        {% if t.status == 'PAUSED' %}<div class="op-warn">In pausa: {{ t.pauseReason|lower }}</div>{% endif %}
+                        {% if o.promisedAt and o.promisedAt|date('Ymd') == 'now'|date('Ymd') %}<div class="op-hot">Consegna oggi alle {{ o.promisedAt|date('G:i') }}</div>{% endif %}
+                    </div>
+                    <a class="op-btn op-btn-g" href="{{ path('tablet_task', {id: t.id}) }}">Dettagli</a>
+                    <form method="post" action="{{ path('tablet_start', {id: t.id}) }}"><input type="hidden" name="_token" value="{{ csrf_token('submit') }}"><button class="op-btn"><i class="fa fa-play"></i> {{ t.status == 'PAUSED' ? 'Riprendi' : 'Avvia' }}</button></form>
+                </div>
+            {% else %}
+                <div class="op-mut py-2" style="font-size: 1.05rem">Nessun altro lavoro in programma oggi.</div>
+            {% endfor %}
+        </section>
+
+        <section class="op-panel">
+            <h2 class="op-h">Completati oggi</h2>
+            {% for t in done %}
+                <div class="op-row op-row-done">
+                    <span class="op-check"><i class="fa fa-check"></i></span>
+                    <div class="flex-grow-1" style="min-width: 0">
+                        <div class="op-row-title" style="margin: 0">{{ t.title }}</div>
+                        <div class="op-mut">{{ t.workOrder.vehicle.name }} · {{ t.workOrder.vehicle.plateLabel }}</div>
+                    </div>
+                    <span class="op-cond" style="font-size: 1.4rem">{{ t.workedSeconds|duration }}</span>
+                </div>
+            {% else %}
+                <div class="op-mut py-2">Ancora niente: forza!</div>
+            {% endfor %}
+
+            <h2 class="op-h mt-4">Lavori liberi da prendere</h2>
+            {% for t in free %}
+                {% set o = t.workOrder %}
+                <div class="op-row flex-wrap">
+                    <div style="flex: 1 1 200px; min-width: 0">
+                        <div class="d-flex align-items-center gap-2 flex-wrap"><span class="plate op-plate-sm"><span>{{ o.vehicle.plateLabel }}</span></span><span class="op-mut">{{ o.vehicle.name }}</span></div>
+                        <div class="op-row-title">{{ t.title }} <span class="op-mut fw-normal">· {{ t.estimatedMinutes|minutes }} h</span></div>
+                        {% if o.promisedAt %}<div class="op-hot">Consegna {{ o.promisedAt|when }}</div>{% endif %}
+                    </div>
+                    <form method="post" action="{{ path('tablet_take', {id: t.id}) }}"><input type="hidden" name="_token" value="{{ csrf_token('submit') }}"><button class="op-btn op-btn-w">Prendo io</button></form>
+                </div>
+            {% else %}
+                <div class="op-mut py-2">Nessun lavoro senza meccanico.</div>
+            {% endfor %}
+        </section>
+    </div>
+{% endblock %}

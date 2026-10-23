@@ -1,0 +1,111 @@
+{% extends 'base.html.twig' %}
+{% import '_macros.html.twig' as ui %}
+
+{% block title %}Calendario lavori{% endblock %}
+
+{% block body %}
+    {% set months = ['', 'gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno', 'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre'] %}
+    {% set title = mode == 'week'
+        ? 'Settimana dal ' ~ from|date('j') ~ (from|date('n') != to|date('n') ? ' ' ~ months[from|date('n')]) ~ ' al ' ~ to|date('j') ~ ' ' ~ months[to|date('n')] ~ ' ' ~ to|date('Y')
+        : (months[day|date('n')] ~ ' ' ~ day|date('Y'))|capitalize %}
+    {% set actions %}
+        <a class="btn btn-light btn-icon-lg" href="{{ path('planning_calendar', {mode: mode, day: prev|date('Y-m-d')}) }}" aria-label="{{ mode == 'week' ? 'Settimana' : 'Mese' }} precedente"><i class="fa fa-chevron-left"></i></a>
+        <a class="btn btn-light" href="{{ path('planning_calendar', {mode: mode}) }}">{{ mode == 'week' ? 'Questa settimana' : 'Questo mese' }}</a>
+        <a class="btn btn-light btn-icon-lg" href="{{ path('planning_calendar', {mode: mode, day: next|date('Y-m-d')}) }}" aria-label="{{ mode == 'week' ? 'Settimana' : 'Mese' }} successiva"><i class="fa fa-chevron-right"></i></a>
+        <a class="btn btn-primary" href="{{ path('order_new') }}"><i class="fa fa-plus"></i> Nuova accettazione</a>
+    {% endset %}
+    {{ include('_page_header.html.twig', {icon: mode == 'week' ? 'fa-calendar-week' : 'fa-calendar', title: 'Calendario lavori', subtitle: title ~ (mode == 'week' ? ' · trascina un lavoro su un altro giorno o meccanico' : ' · tocca un giorno per aprirne il planning'), actions: actions}) }}
+
+    <section class="table-card">
+        <div class="table-toolbar">
+            {{ include('planning/_modes.html.twig', {current: mode}) }}
+            <div class="plan-legend">
+                <span><i class="sw b-run"></i>In corso</span>
+                <span><i class="sw" style="border: 2px solid #1a1718"></i>Pianificata</span>
+                <span><i class="sw b-done"></i>Completata</span>
+                <span><i class="sw b-block"></i>In attesa</span>
+                <span><i class="sw b-tbc"></i>Da autorizzare</span>
+                <span><i class="fa fa-key text-muted"></i>Consegna</span>
+            </div>
+        </div>
+
+        {% if mode == 'week' %}
+            {% set rows = mechanics|map(m => {key: m.id, mechanic: m, capacity: m.dailyHours * 60}) %}
+            {% if unassigned %}{% set rows = rows|merge([{key: 0, mechanic: null, capacity: 0}]) %}{% endif %}
+            <div class="pg-wrap">
+                <div class="wk" id="weekGrid" style="--days: {{ days|length }}" data-move-url="{{ path('planning_move') }}" data-token="{{ csrf_token('submit') }}">
+                    <div class="wk-row wk-head">
+                        <div class="wk-label">Meccanico</div>
+                        {% for key, d in days %}
+                            <a class="wk-day{{ d.date == today ? ' today' }}" href="{{ path('planning', {day: key}) }}">{{ d.date|dow }} <b>{{ d.date|date('j') }}</b></a>
+                        {% endfor %}
+                    </div>
+                    <div class="wk-row wk-deliveries">
+                        <div class="wk-label"><span class="soft-icon i-grey"><i class="fa fa-key"></i></span><span class="fw-bold">Consegne</span></div>
+                        {% for key, d in days %}
+                            <div class="wk-cell{{ d.date == today ? ' today' }}">
+                                {% for o in d.deliveries %}
+                                    <a class="wk-delivery{{ o.status in ['READY', 'DELIVERED'] ? ' is-ready' }}{{ o.late ? ' is-late' }}" href="{{ path('order_show', {id: o.id}) }}" title="{{ o.code }} · {{ o.customer.name }} · {{ o.statusLabel }}">
+                                        <b>{{ o.promisedAt|date('G:i') }}</b> {{ o.vehicle.name }} <span>{{ o.vehicle.plateLabel }}</span>
+                                    </a>
+                                {% endfor %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                    {% for r in rows %}
+                        <div class="wk-row">
+                            <div class="wk-label">
+                                {{ ui.mav(r.mechanic, 'lg') }}
+                                <div><div class="fw-bold">{{ r.mechanic ? r.mechanic.name : 'Da assegnare' }}</div>{% if r.mechanic %}<div class="mini text-muted">{{ r.mechanic.dailyHours|num }} h/giorno</div>{% endif %}</div>
+                            </div>
+                            {% for key, d in days %}
+                                {% set load = d.load[r.key] ?? 0 %}
+                                <div class="wk-cell{{ d.date == today ? ' today' }}{{ d.date|date('N') >= 6 ? ' weekend' }}" data-drop-day="{{ key }}" data-mechanic="{{ r.mechanic ? r.mechanic.id : '' }}">
+                                    {% if r.capacity %}
+                                        {% set pct = (load / r.capacity * 100)|round %}
+                                        <div class="wk-load{{ pct > 100 ? ' is-over' : (pct >= 85 ? ' is-full') }}" title="{{ (load / 60)|num(1) }} h su {{ (r.capacity / 60)|num }}"><span style="width: {{ min(100, pct) }}%"></span></div>
+                                        <div class="wk-hours">{{ load ? (load / 60)|num(1) ~ ' h' : '' }}</div>
+                                    {% endif %}
+                                    {% for i in d.items|filter(i => i.mechanicKey == r.key) %}
+                                        {% set o = i.task.workOrder %}
+                                        <a class="wk-item b-{{ i.kind }}" href="#" data-modal="{{ path('task_plan', {id: i.task.id}) }}" data-title="{{ o.code }} · {{ i.task.title }}"
+                                           title="{{ i.task.title }} · {{ o.vehicle.name }} {{ o.vehicle.plateLabel }} · {{ i.task.statusLabel }} · {{ (i.minutes / 60)|num(1) }} h"
+                                           {% if i.task.status in ['TODO', 'PAUSED'] %}draggable="true" data-task="{{ i.task.id }}" data-time="{{ i.time ?? '8:00' }}"{% endif %}>
+                                            <strong>{{ i.time ? i.time ~ ' · ' }}{{ o.code }}</strong>
+                                            <span>{{ i.task.title }}</span>
+                                            <small>{{ o.vehicle.name }} · {{ (i.minutes / 60)|num(1) }} h</small>
+                                        </a>
+                                    {% endfor %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% else %}
+            <div class="pg-wrap">
+                <div class="mo">
+                    {% for n in ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'] %}<div class="mo-dow">{{ n }}</div>{% endfor %}
+                    {% for key, d in days %}
+                        {% set other = d.date|date('n') != day|date('n') %}
+                        {% set free = d.items|filter(i => i.mechanicKey == 0 and i.task.counts) %}
+                        <a class="mo-day{{ other ? ' other' }}{{ d.date == today ? ' today' }}{{ d.date|date('N') >= 6 ? ' weekend' }}" href="{{ path('planning', {day: key}) }}">
+                            <div class="mo-num">{{ d.date|date('j') }}</div>
+                            {% for m in mechanics %}
+                                {% set load = d.load[m.id] ?? 0 %}
+                                {% if load %}
+                                    {% set pct = (load / (m.dailyHours * 60) * 100)|round %}
+                                    <div class="mo-mech{{ pct > 100 ? ' is-over' : (pct >= 85 ? ' is-full') }}">{{ ui.mav(m) }}<span>{{ (load / 60)|num(1) }} h</span><span class="mo-count">{{ d.items|filter(i => i.mechanicKey == m.id)|length }} lav.</span></div>
+                                {% endif %}
+                            {% endfor %}
+                            {% if free|length %}<div class="mo-mech is-free">{{ ui.mav(null) }}<span>{{ free|length }} da assegnare</span></div>{% endif %}
+                            {% if d.deliveries|length %}
+                                <div class="mo-deliv" title="{{ d.deliveries|map(o => o.vehicle.name ~ ' ' ~ o.vehicle.plateLabel)|join(', ') }}"><i class="fa fa-key"></i> {{ d.deliveries|length }} · {{ d.deliveries|slice(0, 2)|map(o => o.vehicle.model)|join(', ') }}{{ d.deliveries|length > 2 ? '…' }}</div>
+                            {% endif %}
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+    </section>
+{% endblock %}

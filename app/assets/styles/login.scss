@@ -1,0 +1,91 @@
+@use "variables" as *;
+
+.login-page {
+	min-height: 100vh;
+	display: grid;
+	grid-template-columns: 1.1fr 1fr;
+	background: #fff;
+
+	@media (max-width: 900px) { grid-template-columns: 1fr; .login-hero { display: none; } }
+}
+
+.login-hero {
+	position: relative;
+	overflow: hidden;
+	color: #fff;
+	padding: 56px;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	background:
+		radial-gradient(90% 70% at 10% 10%, rgba($color_primary, 0.45) 0%, transparent 60%),
+		radial-gradient(70% 60% at 100% 100%, rgba($color_primary, 0.22) 0%, transparent 60%),
+		linear-gradient(160deg, $sidebar-bg-top, $sidebar-bg-bottom);
+
+	// griglia tecnica sottile, richiama il disegno meccanico
+	&::before {
+		content: "";
+		position: absolute;
+		inset: 0;
+		background-image:
+			linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+			linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+		background-size: 42px 42px;
+		mask-image: linear-gradient(180deg, #000 30%, transparent 100%);
+	}
+
+	> * { position: relative; }
+
+	.brand { display: flex; align-items: center; gap: 14px; font-family: $font-condensed; font-weight: 700; font-size: 1.8rem; letter-spacing: 2px; text-transform: uppercase; }
+	.brand .logo { width: 46px; height: 46px; border-radius: 50%; background: linear-gradient(135deg, #d4142f, $color_dark); color: #fff; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 0 0 3px #fff; }
+
+	h1 { font-family: $font-condensed; font-size: 3.2rem; font-weight: 700; text-transform: uppercase; line-height: 1.02; margin: 0 0 18px; max-width: 560px; }
+	p { color: rgba(255, 255, 255, 0.72); font-size: 1.05rem; max-width: 460px; }
+
+	.modules { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 28px; }
+	.modules span {
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+		padding: 8px 14px;
+		border-radius: 999px;
+		background: rgba(255, 255, 255, 0.08);
+		border: 1px solid rgba(255, 255, 255, 0.12);
+		font-size: 0.85rem;
+	}
+
+	.foot { color: rgba(255, 255, 255, 0.45); font-size: 0.8rem; }
+}
+
+.login-panel {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 40px 24px;
+}
+
+.login-card {
+	width: 100%;
+	max-width: 380px;
+
+	h2 { font-family: $font-condensed; font-weight: 700; font-size: 2.2rem; text-transform: uppercase; margin-bottom: 4px; color: $ink; }
+	.lead { color: $muted; margin-bottom: 30px; font-size: 0.95rem; }
+
+	.form-floating > .form-control { border-radius: 14px; height: 56px; }
+	.form-floating > label { color: $muted; font-weight: 400; }
+	.password-wrap { position: relative; }
+	.password-wrap button {
+		position: absolute;
+		right: 10px;
+		top: 50%;
+		transform: translateY(-50%);
+		border: none;
+		background: none;
+		color: $muted;
+		padding: 8px;
+		z-index: 5;
+	}
+
+	.btn-primary { width: 100%; padding: 13px; border-radius: 14px; font-size: 1rem; margin-top: 8px; }
+	.powered { margin-top: 36px; text-align: center; color: $muted; font-size: 0.8rem; }
+}

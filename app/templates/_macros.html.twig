@@ -1,0 +1,88 @@
+{# Badge di stato e piccoli componenti riusati in più pagine #}
+
+{# Targa in stile italiano #}
+{% macro plate(vehicle, size) %}<span class="plate{{ size == 'xl' ? ' plate-xl' }}"><span>{{ vehicle.plateLabel }}</span></span>{% endmacro %}
+
+{# Avatar del meccanico (null = da assegnare) #}
+{% macro mav(mechanic, size) %}
+    {%- if mechanic -%}
+        <span class="mav mc-{{ mechanic.color }}{{ size ? ' mav-' ~ size }}" title="{{ mechanic.fullName }}">{{ mechanic.initials }}</span>
+    {%- else -%}
+        <span class="mav mc-none{{ size ? ' mav-' ~ size }}" title="Da assegnare">?</span>
+    {%- endif -%}
+{% endmacro %}
+
+{% macro order_status(order) %}
+    {% set colors = {ACCEPTED: '', IN_PROGRESS: 's-red', WAITING: 's-orange', READY: 's-green', DELIVERED: 's-outline', CANCELLED: 's-outline'} %}
+    <span class="status {{ colors[order.status] ?? '' }}">{{ order.statusLabel }}</span>
+{% endmacro %}
+
+{% macro task_status(task) %}
+    {% set colors = {TODO: '', RUNNING: 's-red', PAUSED: 's-orange', DONE: 's-green', PROPOSED: 's-purple', REJECTED: 's-outline'} %}
+    <span class="status {{ colors[task.status] ?? '' }}">{{ task.statusLabel }}{% if task.status == 'PAUSED' and task.pauseReason %} · {{ task.pauseReason|lower }}{% endif %}</span>
+{% endmacro %}
+
+{% macro part_status(part) %}
+    {% set colors = {STOCK: 's-green', TO_ORDER: 's-red', ORDERED: 's-orange', ARRIVED: ''} %}
+    <span class="status {{ colors[part.status] ?? '' }}">{{ part.statusLabel }}{% if part.status == 'ORDERED' and part.expectedAt %} · {{ part.expectedAt|when(false) }}{% endif %}</span>
+{% endmacro %}
+
+{% macro file_icon(attachment) %}
+    {%- if attachment.pdf %}fa-file-pdf{% elseif attachment.image %}fa-file-image{% elseif attachment.originalName matches '/\\.(xlsx?|csv)$/i' %}fa-file-excel{% else %}fa-file{% endif -%}
+{% endmacro %}
+
+{# Elenco allegati con upload multiplo #}
+{% macro attachments(list, upload_url, can_upload) %}
+    {% if list|length %}
+        <div class="attachment-list">
+            {% for a in list %}
+                <div class="attachment">
+                    <i class="fa {{ _self.file_icon(a) }}"></i>
+                    <div style="min-width:0">
+                        <a class="name d-block" href="{{ path('attachment_view', {id: a.id}) }}" target="_blank" title="{{ a.originalName }}">{{ a.originalName }}</a>
+                        <div class="meta">{{ (a.size / 1024)|round }} KB · {{ a.uploadedAt|date('d/m/Y') }}{% if a.authorName %} · {{ a.authorName }}{% endif %}</div>
+                    </div>
+                    {% if a.uploadedBy == app.user or is_granted('ROLE_ADMIN') %}
+                        <form method="post" action="{{ path('attachment_delete', {id: a.id}) }}" data-confirm="Eliminare il documento {{ a.originalName }}?">
+                            <input type="hidden" name="_token" value="{{ csrf_token('submit') }}">
+                            <button class="btn btn-light btn-icon btn-sm" title="Elimina" aria-label="Elimina {{ a.originalName }}"><i class="fa fa-trash"></i></button>
+                        </form>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state py-3"><i class="fa fa-paperclip"></i>Nessun documento allegato</div>
+    {% endif %}
+    {% if can_upload %}
+        <form class="upload-zone" method="post" action="{{ upload_url }}" enctype="multipart/form-data" data-loader>
+            <input type="hidden" name="_token" value="{{ csrf_token('submit') }}">
+            <input class="form-control form-control-sm" style="max-width: 420px" type="file" name="files[]" multiple required aria-label="Scegli i file">
+            <button class="btn btn-light btn-sm"><i class="fa fa-upload"></i> Carica</button>
+        </form>
+    {% endif %}
+{% endmacro %}
+
+{# Pulsante che invia un POST con token CSRF #}
+{% macro post_button(url, label, icon, class, confirm, fields) %}
+    <form method="post" action="{{ url }}" class="d-inline"{% if confirm %} data-confirm="{{ confirm }}"{% endif %}>
+        <input type="hidden" name="_token" value="{{ csrf_token('submit') }}">
+        {% for name, value in fields|default({}) %}<input type="hidden" name="{{ name }}" value="{{ value }}">{% endfor %}
+        <button class="btn {{ class|default('btn-light') }}">{% if icon %}<i class="fa {{ icon }}"></i>{% endif %}{{ label }}</button>
+    </form>
+{% endmacro %}
+
+{% macro history(entries) %}
+    {% if entries|length %}
+        <ul class="timeline">
+            {% for log in entries %}
+                <li>
+                    <div>{{ log.message }}</div>
+                    <div class="when">{{ log.createdAt|date('d/m/Y H:i') }}{% if log.authorName %} · {{ log.authorName }}{% endif %}</div>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <div class="empty-state py-2">Nessuna attività</div>
+    {% endif %}
+{% endmacro %}

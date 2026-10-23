@@ -1,0 +1,243 @@
+{% extends 'base.html.twig' %}
+{% import '_macros.html.twig' as ui %}
+
+{% block title %}{{ order.code }} · {{ order.vehicle.name }}{% endblock %}
+
+{% block body %}
+    {% set o = order %}
+    {% set actions %}
+        <a class="btn btn-light" href="{{ path('order_print', {id: o.id}) }}" target="_blank"><i class="fa fa-print"></i> Stampa scheda</a>
+        {% if o.open %}
+            {% if o.status == 'READY' %}
+                {% if not o.customerNotifiedAt %}{{ ui.post_button(path('order_notified', {id: o.id}), ' Cliente avvisato', 'fa-comment-sms', 'btn-light') }}{% endif %}
+                {{ ui.post_button(path('order_status', {id: o.id}), ' Consegnata', 'fa-key', 'btn-primary', 'Segnare ' ~ o.vehicle.name ~ ' come consegnata al cliente?', {status: 'DELIVERED'}) }}
+            {% else %}
+                {{ ui.post_button(path('order_status', {id: o.id}), ' Segna pronta', 'fa-check', 'btn-primary', o.doneCount < o.activeTasks|length ? 'Ci sono lavorazioni non completate: segnare comunque l\'auto come pronta?' : null, {status: 'READY'}) }}
+            {% endif %}
+        {% endif %}
+        <div class="dropdown d-inline-block">
+            <button class="btn btn-light btn-icon-lg" data-bs-toggle="dropdown" aria-label="Altre azioni"><i class="fa fa-ellipsis"></i></button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item" href="{{ path('order_edit', {id: o.id}) }}"><i class="fa fa-pen fa-fw me-2"></i>Modifica dati</a></li>
+                {% if o.open and o.status != 'WAITING' %}
+                    <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#waitModal"><i class="fa fa-hourglass-half fa-fw me-2"></i>Metti in attesa</a></li>
+                {% endif %}
+                {% if o.status in ['READY', 'DELIVERED', 'CANCELLED'] %}
+                    <li>{{ ui.post_button(path('order_status', {id: o.id}), 'Riapri', null, 'dropdown-item', null, {status: o.workedSeconds ? 'IN_PROGRESS' : 'ACCEPTED'}) }}</li>
+                {% endif %}
+                {% if o.open %}
+                    <li>{{ ui.post_button(path('order_status', {id: o.id}), 'Annulla ordine', null, 'dropdown-item', 'Annullare ' ~ o.code ~ '?', {status: 'CANCELLED'}) }}</li>
+                {% endif %}
+                {% if not o.workedSeconds %}
+                    <li><hr class="dropdown-divider"></li>
+                    <li>{{ ui.post_button(path('order_delete', {id: o.id}), 'Elimina', null, 'dropdown-item text-danger', 'Eliminare definitivamente ' ~ o.code ~ '?') }}</li>
+                {% endif %}
+            </ul>
+        </div>
+    {% endset %}
+    {{ include('_page_header.html.twig', {
+        back: path('board'),
+        title: o.code ~ ' · ' ~ o.vehicle.name,
+        subtitle: ui.order_status(o) ~ ' &nbsp;Accettata ' ~ o.acceptedAt|when ~ ' · ' ~ (o.promisedAt ? 'consegna promessa ' ~ o.promisedAt|when : 'consegna da concordare') ~ ' · ' ~ o.customer.name|e,
+        actions: actions,
+    }) }}
+
+    {% if o.status == 'WAITING' %}
+        <div class="alert alert-warning"><i class="fa fa-hourglass-half me-2"></i><strong>In attesa:</strong> {{ o.waitingReason ?? 'motivo non indicato' }}</div>
+    {% elseif o.status == 'CANCELLED' %}
+        <div class="alert alert-secondary"><i class="fa fa-ban me-2"></i>Ordine annullato.</div>
+    {% elseif o.late %}
+        <div class="alert alert-danger"><i class="fa fa-clock me-2"></i>Consegna promessa {{ o.promisedAt|when }}: siamo in ritardo.</div>
+    {% endif %}
+
+    {% set laborEst = o.estimatedMinutes / 60 * rate %}
+    <div class="kpi-grid">
+        <div class="kpi"><div class="kpi-label">Tempo stimato</div><div class="kpi-value">{{ o.estimatedMinutes|minutes }} <small>h</small></div></div>
+        <div class="kpi"><div class="kpi-label">Tempo effettivo</div><div class="kpi-value{{ o.workedSeconds > o.estimatedMinutes * 60 and o.estimatedMinutes ? ' text-danger' }}">{{ o.workedSeconds|duration }} <small>h{{ o.runningTask ? ' · in corso' }}</small></div></div>
+        <div class="kpi"><div class="kpi-label">Ricambi</div><div class="kpi-value">{{ o.partsTotal|money }}</div></div>
+        <div class="kpi"><div class="kpi-label">{{ o.quoteAmount ? 'Preventivo accettato' : 'Totale stimato' }}</div><div class="kpi-value">{{ (o.quoteAmount ?? (laborEst + o.partsTotal))|money }} <small>+ IVA</small></div></div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-xl-7 d-flex flex-column gap-4">
+            <section class="table-card mb-0">
+                <div class="card-box p-0 mb-0 shadow-none">
+                    <div class="card-title">
+                        <span><i class="fa fa-wrench"></i> Lavorazioni</span>
+                        {% if o.open %}<a class="btn btn-light btn-sm" href="#" data-modal="{{ path('task_new', {id: o.id}) }}" data-title="Nuova lavorazione · {{ o.code }}"><i class="fa fa-plus"></i> Aggiungi lavorazione</a>{% endif %}
+                    </div>
+                </div>
+                {% for t in o.tasks %}
+                    <div class="task-row{{ t.status == 'PROPOSED' ? ' is-proposed' }}{{ t.status == 'REJECTED' ? ' is-rejected' }}">
+                        <span class="tdot t-{{ t.status }}"></span>
+                        <div class="task-main">
+                            <div class="fw-bold">{{ t.title }}{% if t.urgent %} <span class="status s-red ms-1">Sicurezza</span>{% endif %}</div>
+                            <div class="mini text-muted">
+                                {%- if t.status == 'PROPOSED' -%}
+                                    Proposta da {{ t.proposedBy.name ?? '—' }} {{ t.proposedAt|when }}{{ t.description ? ': ' ~ t.description }}
+                                {%- else -%}
+                                    {{ t.description }}{% if t.checklist|length %}{{ t.description ? ' · ' }}controlli {{ t.checklistDone }}/{{ t.checklist|length }}{% endif %}
+                                {%- endif -%}
+                            </div>
+                            {% if t.notes %}<div class="mini mt-1"><i class="fa fa-comment text-muted"></i> {{ t.notes }}</div>{% endif %}
+                        </div>
+                        <div class="task-meta">
+                            <span class="text-nowrap">{{ ui.mav(t.mechanic) }} {{ t.mechanic.name ?? 'Da assegnare' }}</span>
+                            <span class="text-muted text-nowrap">{{ t.workstation.name ?? '' }}{% if t.plannedStart and t.status in ['TODO', 'PAUSED'] %}{{ t.workstation ? ' · ' }}{{ t.plannedStart|when }}{% endif %}</span>
+                            <span class="task-time{{ t.overEstimate ? ' text-danger' }}" title="effettivo / stimato">{% if t.status == 'RUNNING' %}<span data-timer="{{ t.workedSeconds }}" data-format="hm">{{ t.workedSeconds|duration }}</span>{% else %}{{ t.workedSeconds ? t.workedSeconds|duration : '—' }}{% endif %} <span class="text-muted fw-normal">/ {{ t.estimatedMinutes|minutes }}</span></span>
+                            {{ ui.task_status(t) }}
+                        </div>
+                        <div class="task-actions">
+                            {% if t.status == 'PROPOSED' %}
+                                {{ ui.post_button(path('task_decide', {id: t.id}), ' Cliente OK', 'fa-check', 'btn-dark btn-sm', null, {approved: 1}) }}
+                                {{ ui.post_button(path('task_decide', {id: t.id}), ' Rifiutata', null, 'btn-light btn-sm', null, {approved: 0}) }}
+                            {% elseif t.status in ['TODO', 'PAUSED'] and o.open %}
+                                <a class="btn btn-light btn-sm" href="#" data-modal="{{ path('task_plan', {id: t.id}) }}" data-title="Pianifica · {{ t.title }}"><i class="fa fa-calendar-day"></i> Pianifica</a>
+                            {% endif %}
+                            {% if t.status in ['TODO', 'PAUSED', 'RUNNING'] %}
+                                {{ ui.post_button(path('task_finish', {id: t.id}), '', 'fa-check', 'btn-light btn-icon btn-sm', 'Segnare «' ~ t.title ~ '» come completata?') }}
+                            {% elseif t.status == 'DONE' and o.open %}
+                                {{ ui.post_button(path('task_reopen', {id: t.id}), '', 'fa-rotate-left', 'btn-light btn-icon btn-sm', 'Riaprire «' ~ t.title ~ '»?') }}
+                            {% endif %}
+                            <a class="btn btn-light btn-icon btn-sm" href="#" data-modal="{{ path('task_edit', {id: t.id}) }}" data-title="{{ t.title }}" aria-label="Modifica {{ t.title }}"><i class="fa fa-pen"></i></a>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="empty-state"><i class="fa fa-wrench"></i>Nessuna lavorazione: aggiungine una</div>
+                {% endfor %}
+            </section>
+
+            <section class="card-box mb-0">
+                <div class="card-title"><span><i class="fa fa-stopwatch"></i> Registro tempi</span><span class="mini text-muted">dal tablet in officina</span></div>
+                {% if entries|length %}
+                    <ol class="time-log">
+                        {% for e in entries %}
+                            <li>
+                                <time>{{ e.startedAt|date('G:i') }}</time>
+                                <span class="ldot {{ not e.endedAt ? 'l-start' : (e.endReason == 'Completata' ? 'l-done' : 'l-pause') }}"></span>
+                                <div>
+                                    <div class="fw-bold">{{ e.mechanic.name }} · {{ e.task.title }}</div>
+                                    <div class="mini text-muted">
+                                        {{ e.startedAt|when(false) }} {{ e.startedAt|date('G:i') }}–{{ e.endedAt ? e.endedAt|date('G:i') : 'in corso' }}
+                                        · {{ e.seconds|duration }} h{% if e.endReason %} · {{ e.endReason|lower }}{% endif %}
+                                    </div>
+                                </div>
+                            </li>
+                        {% endfor %}
+                    </ol>
+                {% else %}
+                    <div class="empty-state py-3"><i class="fa fa-stopwatch"></i>Ancora nessun tempo: i meccanici avviano le lavorazioni dal tablet</div>
+                {% endif %}
+            </section>
+
+            <section class="table-card mb-0">
+                <div class="card-box p-0 mb-0 shadow-none">
+                    <div class="card-title">
+                        <span><i class="fa fa-box"></i> Ricambi e materiali</span>
+                        <a class="btn btn-light btn-sm" href="#" data-modal="{{ path('part_new', {id: o.id}) }}" data-title="Ricambio · {{ o.code }}"><i class="fa fa-plus"></i> Aggiungi ricambio</a>
+                    </div>
+                </div>
+                <table class="app-table cards-mobile">
+                    <thead><tr><th>Codice</th><th>Descrizione</th><th class="num">Q.tà</th><th class="num">Prezzo</th><th class="num">Totale</th><th>Provenienza</th><th></th></tr></thead>
+                    <tbody>
+                        {% for p in o.parts %}
+                            <tr>
+                                <td class="cell-head code">{{ p.code ?? '—' }} <span class="only-mobile">{{ ui.part_status(p) }}</span></td>
+                                <td class="cell-title">{{ p.description }}<div class="mini text-muted">{{ p.task ? p.task.title }}{{ p.addedBy ? ' · da ' ~ p.addedBy.name }}</div></td>
+                                <td data-label="Quantità" class="num">{{ p.quantity|num }} {{ p.unit }}</td>
+                                <td data-label="Prezzo" class="num">{{ p.unitPrice is not null ? p.unitPrice|money : '—' }}</td>
+                                <td data-label="Totale" class="num fw-bold">{{ p.unitPrice is not null ? p.total|money : '—' }}</td>
+                                <td class="hide-mobile">{{ ui.part_status(p) }}</td>
+                                <td class="actions"><a class="btn btn-light btn-icon btn-sm" href="#" data-modal="{{ path('part_edit', {id: p.id}) }}" data-title="{{ p.description }}" aria-label="Modifica {{ p.description }}"><i class="fa fa-pen"></i></a></td>
+                            </tr>
+                        {% else %}
+                            <tr><td colspan="7"><div class="empty-state py-3">Nessun ricambio registrato</div></td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <div class="totals">
+                    <span>Ricambi <b>{{ o.partsTotal|money }}</b></span>
+                    <span>Manodopera {{ o.estimatedMinutes|minutes }} h × {{ rate|money }} <b>{{ laborEst|money }}</b></span>
+                    <span>Totale <b class="text-danger">{{ (laborEst + o.partsTotal)|money }}</b></span>
+                </div>
+            </section>
+        </div>
+
+        <div class="col-xl-5 d-flex flex-column gap-4">
+            <section class="card-box mb-0">
+                <div class="card-title"><span><i class="fa fa-car-side"></i> Veicolo</span><a class="mini" href="{{ path('vehicle_show', {id: o.vehicle.id}) }}">Storico ({{ o.vehicle.workOrders|length }} {{ o.vehicle.workOrders|length == 1 ? 'ordine' : 'ordini' }})</a></div>
+                <div class="mb-3">{{ ui.plate(o.vehicle, 'xl') }}</div>
+                <dl class="kv">
+                    <dt>Modello</dt><dd>{{ o.vehicle.name }}{{ o.vehicle.version ? ' ' ~ o.vehicle.version }}{{ o.vehicle.fuel ? ' · ' ~ o.vehicle.fuel|lower }}</dd>
+                    {% if o.vehicle.year %}<dt>Anno</dt><dd>{{ o.vehicle.year }}</dd>{% endif %}
+                    {% if o.vehicle.vin %}<dt>Telaio</dt><dd>{{ o.vehicle.vin }}</dd>{% endif %}
+                    <dt>Km in ingresso</dt><dd>{{ o.kmIn ? o.kmIn|num ~ ' km' : '—' }}</dd>
+                    <dt>Carburante</dt><dd>{{ o.fuelLevel ?? '—' }}</dd>
+                    {% if o.vehicle.revisionDue %}<dt>Revisione</dt><dd class="{{ o.vehicle.revisionDue < date('+30 days') ? 'text-danger' }}">scade {{ o.vehicle.revisionDue|date('m/Y') }}</dd>{% endif %}
+                    {% if o.courtesyCar %}<dt>Auto di cortesia</dt><dd>Sì</dd>{% endif %}
+                </dl>
+            </section>
+
+            <section class="card-box mb-0">
+                <div class="card-title"><span><i class="fa fa-user"></i> Cliente</span><a class="mini" href="{{ path('customer_edit', {id: o.customer.id}) }}">Scheda</a></div>
+                <dl class="kv">
+                    <dt>Nome</dt><dd>{{ o.customer.name }}</dd>
+                    <dt>Telefono</dt><dd>{% if o.customer.phone %}<a href="tel:{{ o.customer.phone|replace({' ': ''}) }}">{{ o.customer.phone }}</a>{% else %}—{% endif %}</dd>
+                    {% if o.customer.email %}<dt>E-mail</dt><dd><a href="mailto:{{ o.customer.email }}">{{ o.customer.email }}</a></dd>{% endif %}
+                    <dt>Avvisarlo con</dt><dd>{{ o.customer.contactPreference ?? '—' }}</dd>
+                    {% if o.customerNotifiedAt %}<dt>Avvisato</dt><dd>{{ o.customerNotifiedAt|when }}</dd>{% endif %}
+                </dl>
+            </section>
+
+            <section class="card-box mb-0">
+                <div class="card-title"><span><i class="fa fa-clipboard-check"></i> Accettazione</span></div>
+                <div class="mini text-muted fw-bold mb-1">Cosa chiede il cliente</div>
+                <div class="quote-box mb-3">{{ o.customerRequest ? '“' ~ o.customerRequest ~ '”' : '—' }}</div>
+                {% if o.intakeNotes %}<div class="mini text-muted fw-bold mb-1">Stato all'ingresso</div><div class="mb-1">{{ o.intakeNotes|nl2br }}</div>{% endif %}
+            </section>
+
+            <section class="card-box mb-0" id="foto">
+                <div class="card-title"><span><i class="fa fa-camera"></i> Foto e documenti</span></div>
+                {% set images = o.attachments|filter(a => a.image) %}
+                {% if images|length %}
+                    <div class="photo-grid mb-3">
+                        {% for a in images %}
+                            <a href="{{ path('attachment_view', {id: a.id}) }}" target="_blank" title="{{ a.originalName }}"><img src="{{ path('attachment_view', {id: a.id}) }}" alt="{{ a.task ? a.task.title : a.originalName }}" loading="lazy"><span class="cap">{{ a.task ? a.task.title : (a.authorName ?? a.originalName) }}</span></a>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                {{ ui.attachments(o.attachments|filter(a => not a.image), path('order_upload', {id: o.id}), true) }}
+            </section>
+
+            <section class="card-box mb-0">
+                <form method="post" action="{{ path('order_notes', {id: o.id}) }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('submit') }}">
+                    <label class="form-label" for="notes">Note interne (non stampate per il cliente)</label>
+                    <textarea class="form-control" id="notes" name="notes" rows="3">{{ o.internalNotes }}</textarea>
+                    <div class="text-end mt-2"><button class="btn btn-light btn-sm"><i class="fa fa-check"></i> Salva note</button></div>
+                </form>
+            </section>
+
+            <section class="card-box mb-0">
+                <div class="card-title"><span><i class="fa fa-clock-rotate-left"></i> Storico</span></div>
+                {{ ui.history(history) }}
+            </section>
+        </div>
+    </div>
+
+    <div class="modal fade" id="waitModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <form class="modal-content" method="post" action="{{ path('order_status', {id: o.id}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('submit') }}">
+                <input type="hidden" name="status" value="WAITING">
+                <div class="modal-header"><h5 class="modal-title">Perché è ferma?</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Chiudi"></button></div>
+                <div class="modal-body">
+                    <label class="form-label" for="reason">Motivo</label>
+                    <input class="form-control" id="reason" name="reason" list="reasons" placeholder="es. Attesa ricambi · volano lunedì" required>
+                    <datalist id="reasons"><option value="Attesa ricambi"><option value="Attesa OK del cliente"><option value="Il cliente deve portare/ritirare"><option value="Lavorazione esterna"></datalist>
+                </div>
+                <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Annulla</button><button class="btn btn-primary">Metti in attesa</button></div>
+            </form>
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=../vendor/symfony/dependency-injection/Loader/schema/services.schema.json
+
+parameters:
+    # Documenti allegati (libretti, verbali, POS): fuori da public/ e da var/
+    app.upload_dir: '%kernel.project_dir%/uploads'
+
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+        bind:
+            string $uploadDir: '%app.upload_dir%'
+
+    App\:
+        resource: '../src/'

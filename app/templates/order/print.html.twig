@@ -1,0 +1,63 @@
+{% extends 'base.html.twig' %}
+{% import '_macros.html.twig' as ui %}
+
+{% block title %}Scheda {{ order.code }}{% endblock %}
+
+{% block body %}
+    {% set o = order %}
+    {{ include('_page_header.html.twig', {back: path('order_show', {id: o.id}), title: 'Scheda di lavoro ' ~ o.code, actions: '<button class="btn btn-primary" onclick="window.print()"><i class="fa fa-print"></i> Stampa</button>'}) }}
+    <div class="print-sheet">
+        <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+            <div>
+                <h1>Gestionale officina</h1>
+                <div class="text-muted">Scheda di lavoro</div>
+            </div>
+            <div class="text-end">
+                <div class="code-lg fs-3">{{ o.code }}/{{ o.year }}</div>
+                <div>Accettata il {{ o.acceptedAt|date('d/m/Y H:i') }}</div>
+                {% if o.promisedAt %}<div><strong>Consegna prevista {{ o.promisedAt|date('d/m/Y H:i') }}</strong></div>{% endif %}
+            </div>
+        </div>
+        <div class="row g-3 mb-3">
+            <div class="col-6">
+                <div class="mini text-muted fw-bold">VEICOLO</div>
+                <div class="mb-1">{{ ui.plate(o.vehicle) }}</div>
+                <div>{{ o.vehicle.name }} {{ o.vehicle.version }}{{ o.vehicle.year ? ' · ' ~ o.vehicle.year }}</div>
+                <div>Km {{ o.kmIn ? o.kmIn|num : '____________' }} · Carburante {{ o.fuelLevel ?? '______' }}</div>
+                {% if o.vehicle.vin %}<div>Telaio {{ o.vehicle.vin }}</div>{% endif %}
+            </div>
+            <div class="col-6">
+                <div class="mini text-muted fw-bold">CLIENTE</div>
+                <div class="fw-bold">{{ o.customer.name }}</div>
+                <div>{{ o.customer.phone }}</div>
+                <div>{{ o.customer.email }}</div>
+            </div>
+        </div>
+        <div class="mini text-muted fw-bold">RICHIESTA DEL CLIENTE</div>
+        <div class="box mb-3">{{ o.customerRequest }}</div>
+        {% if o.intakeNotes %}<div class="mini text-muted fw-bold">STATO ALL'INGRESSO</div><div class="box mb-3">{{ o.intakeNotes }}</div>{% endif %}
+
+        <div class="mini text-muted fw-bold">LAVORAZIONI</div>
+        <table>
+            <thead><tr><th>Lavorazione</th><th>Meccanico</th><th>Stimato</th><th>Effettivo</th><th>Fatto</th></tr></thead>
+            <tbody>
+                {% for t in o.activeTasks %}
+                    <tr><td>{{ t.title }}{% if t.description %}<br><small>{{ t.description }}</small>{% endif %}</td><td>{{ t.mechanic.name ?? '' }}</td><td>{{ t.estimatedMinutes|minutes }}</td><td>{{ t.workedSeconds ? t.workedSeconds|duration : '' }}</td><td>{{ t.status == 'DONE' ? '✓' : '☐' }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        {% if o.parts|length %}
+            <div class="mini text-muted fw-bold mt-3">RICAMBI</div>
+            <table>
+                <thead><tr><th>Codice</th><th>Descrizione</th><th>Q.tà</th><th class="text-end">Importo</th></tr></thead>
+                <tbody>
+                    {% for p in o.parts %}<tr><td>{{ p.code }}</td><td>{{ p.description }}</td><td>{{ p.quantity|num }} {{ p.unit }}</td><td class="text-end">{{ p.unitPrice is not null ? p.total|money }}</td></tr>{% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+        {% set labor = o.estimatedMinutes / 60 * rate %}
+        <div class="text-end mt-3">Manodopera {{ o.estimatedMinutes|minutes }} h: {{ labor|money }} · Ricambi: {{ o.partsTotal|money }} · <strong>Totale {{ (labor + o.partsTotal)|money }} + IVA</strong></div>
+        <div class="row mt-5"><div class="col-6">Firma del cliente all'accettazione<div class="box mt-1"></div></div><div class="col-6">Firma alla consegna<div class="box mt-1"></div></div></div>
+    </div>
+{% endblock %}

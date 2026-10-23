@@ -1,0 +1,22 @@
+/.env
+/mysql/
+
+###> symfony/framework-bundle ###
+/app/.env.local
+/app/.env.local.php
+/app/.env.*.local
+/app/config/secrets/prod/prod.decrypt.private.php
+/app/public/bundles/
+/app/var/
+/app/vendor/
+###< symfony/framework-bundle ###
+
+# documenti caricati dagli utenti
+/app/uploads/
+
+# dipendenze e asset compilati: si rigenerano con yarn install + yarn encore
+/app/node_modules/
+/app/public/build/
+
+/app/phpunit.xml
+/app/.phpunit.cache/

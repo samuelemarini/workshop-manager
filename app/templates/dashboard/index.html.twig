@@ -1,0 +1,178 @@
+{% extends 'base.html.twig' %}
+{% import '_macros.html.twig' as ui %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block body %}
+    {% set actions %}
+        <a class="btn btn-light" href="{{ path('planning') }}"><i class="fa fa-calendar-day"></i> Planning</a>
+        <a class="btn btn-primary" href="{{ path('order_new') }}"><i class="fa fa-plus"></i> Nuova accettazione</a>
+    {% endset %}
+    {{ include('_page_header.html.twig', {icon: 'fa-gauge-high', title: 'Dashboard officina', subtitle: now|long_date|capitalize ~ ' · ore ' ~ now|date('G:i'), actions: actions}) }}
+
+    <div class="stat-grid">
+        <a class="stat-tile" href="{{ path('board') }}">
+            <div class="stat-label">Veicoli in officina</div>
+            <div class="stat-value">{{ stats.inShop }}</div>
+            <div class="stat-hint">ordini aperti, pronte comprese</div>
+            <i class="fa fa-car-side"></i>
+        </a>
+        <a class="stat-tile is-red" href="{{ path('planning') }}">
+            <div class="stat-label">Lavorazioni in corso</div>
+            <div class="stat-value">{{ stats.running }}</div>
+            <div class="stat-hint">{{ stats.running ? 'meccanici al lavoro adesso' : 'nessuno sta lavorando' }}</div>
+            <i class="fa fa-wrench"></i>
+        </a>
+        <a class="stat-tile is-warning" href="{{ path('board') }}">
+            <div class="stat-label">Ferme in attesa</div>
+            <div class="stat-value">{{ stats.waiting|length }}</div>
+            <div class="stat-hint">{{ stats.waiting|map(o => o.waitingReason|split(' · ')|first|lower)|join(', ')|default('nessuna') }}</div>
+            <i class="fa fa-hourglass-half"></i>
+        </a>
+        <a class="stat-tile is-ok" href="{{ path('board') }}">
+            <div class="stat-label">Pronte da consegnare</div>
+            <div class="stat-value">{{ stats.ready|length }}</div>
+            <div class="stat-hint">{{ stats.ready|map(o => o.vehicle.name)|join(', ')|default('nessuna') }}</div>
+            <i class="fa fa-circle-check"></i>
+        </a>
+        <a class="stat-tile" href="{{ path('mechanic_index') }}">
+            <div class="stat-label">Ore lavorate oggi</div>
+            <div class="stat-value">{{ (stats.worked / 3600)|num(1) }} <small>/ {{ (stats.capacity / 3600)|num }} h</small></div>
+            <div class="stat-hint">{{ cards|length }} meccanici</div>
+            <i class="fa fa-stopwatch"></i>
+        </a>
+    </div>
+
+    <div class="mech-grid">
+        {% for c in cards %}
+            {% set t = c.current %}
+            <section class="mech-card" aria-label="{{ c.mechanic.name }}">
+                <div class="mech-head">
+                    {{ ui.mav(c.mechanic, 'lg') }}
+                    <div class="flex-grow-1" style="min-width: 0">
+                        <div class="mech-name">{{ c.mechanic.name }}</div>
+                        <div class="mini text-muted">{{ t and t.workstation ? t.workstation.name ~ ' · ' }}{{ c.todoCount }} lavorazioni ancora da fare</div>
+                    </div>
+                    {% if t and t.status == 'RUNNING' %}
+                        <span class="live">Al lavoro da {{ t.openEntry.startedAt|date('G:i') }}</span>
+                    {% elseif t %}
+                        <span class="live is-paused">In pausa</span>
+                    {% else %}
+                        <span class="live is-idle">Libero</span>
+                    {% endif %}
+                </div>
+                {% if t %}
+                    {% set o = t.workOrder %}
+                    <a class="mech-job" href="{{ path('order_show', {id: o.id}) }}">
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <span class="code-lg">{{ o.code }}</span>{{ ui.plate(o.vehicle) }}<span class="mini text-muted">{{ o.vehicle.name }}</span>
+                        </div>
+                        <div class="fw-bold">{{ t.title }}</div>
+                        <div class="d-flex align-items-end justify-content-between gap-2">
+                            <div><span class="timer-big{{ t.overEstimate ? ' text-danger' }}" {% if t.status == 'RUNNING' %}data-timer="{{ t.workedSeconds }}" data-format="hm"{% endif %}>{{ t.workedSeconds|duration }}</span> <span class="mini text-muted">lavorate</span></div>
+                            <div class="mini text-muted text-end">stimate <b class="text-body">{{ t.estimatedMinutes|minutes }}</b>{% if t.status == 'PAUSED' %}<br>{{ t.pauseReason }}{% endif %}</div>
+                        </div>
+                        {% set pct = t.estimatedMinutes ? min(100, (t.workedSeconds / 60 / t.estimatedMinutes * 100)|round) : 0 %}
+                        <div class="progress-thin{{ c.mechanic.color == 'black' ? ' dark' }}"><div style="width: {{ pct }}%"></div></div>
+                    </a>
+                    {% if o.proposedTasks|length %}
+                        <div class="warn-box"><i class="fa fa-triangle-exclamation"></i><span>{{ o.proposedTasks|map(p => p.title)|join(', ') }}: in attesa dell'OK del cliente.</span></div>
+                    {% endif %}
+                {% else %}
+                    <div class="empty-state py-3"><i class="fa fa-mug-hot"></i>Nessuna lavorazione in corso</div>
+                {% endif %}
+                <div class="mech-foot">
+                    <span><span class="text-muted">Poi:</span> <b>{% if c.next %}{{ c.next.plannedStart ? c.next.plannedStart|date('G:i') ~ ' · ' }}{{ c.next.title }} · {{ c.next.workOrder.vehicle.name }}{% else %}niente in programma{% endif %}</b></span>
+                    <span class="text-muted">Oggi {{ c.worked|hours }} lavorate</span>
+                </div>
+            </section>
+        {% endfor %}
+    </div>
+
+    <div class="row g-4">
+        <div class="col-xl-7">
+            <section class="table-card mb-0">
+                <div class="card-box p-0 mb-0 shadow-none">
+                    <div class="card-title"><span><i class="fa fa-clipboard-list"></i> Ordini di lavoro aperti</span><a class="mini" href="{{ path('board') }}">Apri la bacheca</a></div>
+                </div>
+                <div class="table-responsive">
+                <table class="app-table cards-mobile">
+                    <thead><tr><th>Ordine</th><th>Veicolo</th><th>Cliente e lavori</th><th>Meccanici</th><th>Consegna</th><th>Stato</th></tr></thead>
+                    <tbody>
+                        {% for o in open %}
+                            <tr data-href="{{ path('order_show', {id: o.id}) }}" class="{{ o.late ? 'row-alert' }}">
+                                <td class="cell-head"><span class="code-lg">{{ o.code }}</span> <span class="only-mobile">{{ ui.order_status(o) }}</span></td>
+                                <td data-label="Veicolo">{{ ui.plate(o.vehicle) }}<div class="mini text-muted mt-1 text-nowrap">{{ o.vehicle.name }}</div></td>
+                                <td data-label="Cliente"><div class="fw-semibold">{{ o.customer.name }}</div><div class="mini text-muted"><b>{{ o.doneCount }}/{{ o.activeTasks|length }}</b> · {{ o.activeTasks|map(t => t.title)|join(', ')|default('nessuna lavorazione') }}</div></td>
+                                <td data-label="Meccanici" class="text-nowrap">{% for m in o.mechanics %}{{ ui.mav(m) }}{% else %}{% if o.activeTasks|length %}{{ ui.mav(null) }}{% endif %}{% endfor %}</td>
+                                <td data-label="Consegna" class="text-nowrap fw-semibold{{ o.late ? ' text-danger' }}">{{ o.promisedAt|when|default('—') }}</td>
+                                <td class="hide-mobile">{{ ui.order_status(o) }}</td>
+                            </tr>
+                        {% else %}
+                            <tr><td colspan="6"><div class="empty-state"><i class="fa fa-car-side"></i>Nessun veicolo in officina</div></td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                </div>
+            </section>
+        </div>
+
+        <div class="col-xl-5 d-flex flex-column gap-4">
+            <section class="card-box mb-0">
+                <div class="card-title"><span><i class="fa fa-key"></i> Consegne di oggi</span></div>
+                {% for o in deliveries %}
+                    <a class="list-row text-body" href="{{ path('order_show', {id: o.id}) }}">
+                        <span class="hour-chip{{ o.late ? ' is-late' }}">{{ o.promisedAt|date('G:i') }}</span>
+                        <div class="grow">
+                            <div class="fw-bold">{{ o.vehicle.name }} <span class="text-muted fw-normal">· {{ o.customer.name }}</span></div>
+                            <div class="mini text-muted">
+                                {%- if o.status == 'READY' -%}
+                                    {{ o.customerNotifiedAt ? 'cliente avvisato ' ~ o.customerNotifiedAt|when : 'pronta: avvisa il cliente' }}
+                                {%- elseif o.runningTask -%}
+                                    in corso: {{ o.runningTask.title }}
+                                {%- elseif o.hasUnassignedTasks -%}
+                                    lavorazioni senza meccanico
+                                {%- else -%}
+                                    {{ o.doneCount }}/{{ o.activeTasks|length }} lavorazioni completate
+                                {%- endif -%}
+                            </div>
+                        </div>
+                        {{ ui.order_status(o) }}
+                    </a>
+                {% else %}
+                    <div class="empty-state py-3"><i class="fa fa-key"></i>Nessuna consegna promessa per oggi</div>
+                {% endfor %}
+            </section>
+
+            <section class="card-box mb-0">
+                <div class="card-title"><span><i class="fa fa-triangle-exclamation"></i> Da gestire</span></div>
+                {% for a in alerts|slice(0, 8) %}
+                    <div class="list-row">
+                        <span class="soft-icon i-{{ a.tone }}"><i class="fa {{ a.icon }}"></i></span>
+                        <div class="grow">
+                            <div class="fw-bold">{{ a.title }}</div>
+                            <div class="mini text-muted">{{ a.text }}</div>
+                        </div>
+                        <a class="btn btn-light btn-sm" href="{{ a.action == 'Pianifica' ? path('planning') : path('order_show', {id: a.order.id}) }}">{{ a.action }}</a>
+                    </div>
+                {% else %}
+                    <div class="empty-state py-3"><i class="fa fa-circle-check"></i>Niente da segnalare</div>
+                {% endfor %}
+            </section>
+
+            <section class="card-box mb-0">
+                <div class="card-title"><span><i class="fa fa-chart-simple"></i> Settimana dal {{ monday|date('d/m') }}</span><a class="mini" href="{{ path('mechanic_index') }}">Dettaglio ore</a></div>
+                {% for w in week %}
+                    <div class="week-row">
+                        <b>{{ w.mechanic.name }}</b>
+                        <div class="progress-thin{{ w.mechanic.color == 'black' ? ' dark' }}"><div style="width: {{ w.capacity ? min(100, (w.worked / w.capacity * 100)|round) : 0 }}%"></div></div>
+                        <span class="fw-bold text-nowrap">{{ w.worked|hours }}</span>
+                    </div>
+                    <div class="mini text-muted mb-2" style="padding-left: 100px">
+                        {{ w.done }} lavorazioni chiuse{% if w.done %} · stimate {{ w.estimated|duration }}, impiegate {{ w.spent|duration }}{% endif %}
+                    </div>
+                {% endfor %}
+            </section>
+        </div>
+    </div>
+{% endblock %}

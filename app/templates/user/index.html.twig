@@ -1,0 +1,29 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Utenti{% endblock %}
+
+{% block body %}
+    {% set actions %}
+        <a class="btn btn-primary" href="{{ path('user_new') }}"><i class="fa fa-plus"></i> Nuovo utente</a>
+    {% endset %}
+    {{ include('_page_header.html.twig', {icon: 'fa-users', title: 'Utenti', subtitle: users|length ~ ' utenti attivi', actions: actions}) }}
+
+    <div class="table-card">
+        <div class="table-toolbar">
+            <div class="search-pill"><i class="fa fa-search"></i><input type="text" placeholder="Cerca..." data-table-search="#users"></div>
+        </div>
+        <table class="app-table cards-mobile" id="users" data-datatable data-order='[[1,"asc"]]'>
+            <thead><tr><th>Username</th><th>Nome</th><th>E-mail</th><th>Ruoli</th></tr></thead>
+            <tbody>
+                {% for user in users %}
+                    <tr data-href="{{ path('user_edit', {id: user.id}) }}">
+                        <td class="code cell-head">{{ user.username }}</td>
+                        <td>{{ user.fullName }}</td>
+                        <td>{{ user.email }}</td>
+                        <td>{% for r in user.customroles %}<span class="status s-dark me-1">{{ r.name }}</span>{% endfor %}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

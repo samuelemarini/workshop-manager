@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="it">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+        <meta name="theme-color" content="#0e0c0d">
+        <meta name="csrf-token" content="{{ csrf_token('submit') }}">
+        <title>{% block title %}Officina{% endblock %} · Officina</title>
+        <link rel="icon" type="image/svg+xml" href="{{ asset('build/images/favicon.svg') }}">
+        {{ encore_entry_link_tags('tablet') }}
+    </head>
+    <body class="op">
+        {% import '_macros.html.twig' as ui %}
+        {% if me is defined %}
+            <header class="op-top">
+                <span class="mav mc-{{ me.color }}" style="width: 48px; height: 48px; font-size: 1.15rem">{{ me.initials }}</span>
+                <div class="op-who">
+                    <div class="op-cond op-name">{{ me.name }}</div>
+                    <div class="op-mut">Oggi <span data-timer="{{ worked ?? 0 }}" data-format="hm"{% if not (running ?? false) %} data-paused{% endif %}>{{ (worked ?? 0)|duration }}</span> h lavorate</div>
+                </div>
+                {% block back %}{% endblock %}
+                <div class="flex-grow-1"></div>
+                <span class="op-clock" data-clock="{{ 'now'|date('H:i:s') }}">{{ 'now'|date('G:i') }}</span>
+                <form method="post" action="{{ path('tablet_logout') }}" id="autoLogout">
+                    <button class="op-gbtn"><i class="fa fa-user-group"></i> Cambia operatore</button>
+                </form>
+            </header>
+        {% endif %}
+
+        {% for type, messages in app.flashes %}
+            {% for message in messages %}
+                <div class="op-toast op-toast-{{ type }}" role="status">{{ message }}</div>
+            {% endfor %}
+        {% endfor %}
+
+        {% block body %}{% endblock %}
+
+        {{ encore_entry_script_tags('tablet') }}
+    </body>
+</html>

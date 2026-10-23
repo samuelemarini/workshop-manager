@@ -1,0 +1,30 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Clienti{% endblock %}
+
+{% block body %}
+    {% set actions %}
+        <a class="btn btn-primary" href="{{ path('customer_new') }}"><i class="fa fa-plus"></i> Nuovo cliente</a>
+    {% endset %}
+    {{ include('_page_header.html.twig', {icon: 'fa-user-group', title: 'Clienti', subtitle: customers|length ~ ' clienti, privati e aziende', actions: actions}) }}
+
+    <div class="table-card">
+        <div class="table-toolbar">
+            <div class="search-pill"><i class="fa fa-search"></i><input type="text" placeholder="Cerca nome, telefono..." data-table-search="#customers" aria-label="Cerca cliente"></div>
+        </div>
+        <table class="app-table cards-mobile" id="customers" data-datatable data-order='[[0,"asc"]]'>
+            <thead><tr><th>Cliente</th><th>Telefono</th><th>E-mail</th><th>Avvisarlo con</th><th>Città</th></tr></thead>
+            <tbody>
+                {% for c in customers %}
+                    <tr data-href="{{ path('customer_edit', {id: c.id}) }}">
+                        <td class="cell-head fw-semibold">{{ c.name }}</td>
+                        <td data-label="Telefono">{% if c.phone %}<a href="tel:{{ c.phone|replace({' ': ''}) }}">{{ c.phone }}</a>{% endif %}</td>
+                        <td data-label="E-mail">{{ c.email }}</td>
+                        <td data-label="Avvisarlo con">{{ c.contactPreference }}</td>
+                        <td data-label="Città">{{ c.city }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}
