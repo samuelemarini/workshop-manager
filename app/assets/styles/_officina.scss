@@ -810,3 +810,97 @@ dl.kv {
 }
 
 .mo-deliv { font-size: 0.74rem; color: $muted; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; i { color: $ink; } }
+
+/* --------------------------------------------------------------------------
+   Telefono: agende al posto delle griglie, mese compatto, bacheca a colonne agganciate
+   -------------------------------------------------------------------------- */
+.only-mobile-block { display: none; }
+
+.agenda { padding: 4px 14px 14px; }
+.agenda-group { padding: 12px 0; border-bottom: 1px solid #f0eded; display: flex; flex-direction: column; gap: 6px; &:last-child { border-bottom: none; } }
+.agenda-head { display: flex; align-items: center; gap: 10px; color: $ink; margin-bottom: 4px; &:hover { color: $ink; } }
+.agenda-date {
+	flex: 0 0 48px;
+	height: 48px;
+	border-radius: 12px;
+	background: #f2f1f0;
+	display: inline-flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	font-family: $font-condensed;
+	font-weight: 700;
+	font-size: 1.3rem;
+	line-height: 1;
+
+	small { font-family: $font-family-sans-serif; font-size: 0.62rem; font-weight: 600; text-transform: uppercase; color: $muted; }
+}
+.agenda-group.is-today .agenda-date { background: linear-gradient(135deg, #d4142f, $color_dark); color: #fff; small { color: #ffe3e7; } }
+
+.agenda-item {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	min-height: 52px;
+	padding: 6px 10px;
+	border-radius: 10px;
+	font-size: 0.82rem;
+
+	.agenda-time { flex: 0 0 76px; font-family: $font-condensed; font-weight: 700; font-size: 0.92rem; }
+	.agenda-body { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.25; }
+	.agenda-body > * { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	strong { font-family: $font-condensed; font-weight: 700; font-size: 0.95rem; }
+	&.b-free { box-shadow: none; }
+}
+
+.board-jump {
+	position: sticky;
+	top: 64px;
+	z-index: 5;
+	margin: 0 -14px 12px;
+	padding: 8px 14px;
+	background: rgba($canvas, 0.95);
+	backdrop-filter: blur(4px);
+	white-space: nowrap;
+	overflow-x: auto;
+
+	a { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 12px; margin-right: 6px; border-radius: 999px; background: #fff; border: 1px solid #e0dbda; color: $ink; font-size: 0.82rem; font-weight: 600; }
+	.kdot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+}
+
+@media (max-width: 767px) {
+	.only-mobile-block { display: block; }
+	.agenda-group { display: flex; }
+
+	.day-chips { flex-wrap: nowrap; overflow-x: auto; max-width: 100%; padding-bottom: 2px; }
+	.table-toolbar > .d-flex { min-width: 0; max-width: 100%; }
+
+	// bacheca: una colonna per schermata, agganciata allo scorrimento
+	.board-wrap { scroll-snap-type: x mandatory; margin: 0 -14px; padding: 0 14px 6px; scroll-padding: 0 14px; }
+	.board { grid-template-columns: repeat(5, 84vw); min-width: 0; gap: 12px; }
+	.kcol { scroll-snap-align: start; min-height: 200px; scroll-margin-top: 120px; }
+	.search-pill { flex: 1 1 100%; min-width: 0; }
+
+	// mese: sette colonne strette senza scorrimento
+	.mo { min-width: 0; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+	.mo-dow { padding: 8px 2px; text-align: center; font-size: 0.6rem; letter-spacing: 0.3px; }
+	.mo-day {
+		min-height: 74px;
+		padding: 4px 2px;
+		gap: 3px;
+		align-items: center;
+
+		.mo-num { font-size: 0.95rem; min-width: 26px; height: 26px; align-self: center; }
+	}
+	.mo-mech { padding: 0; background: none !important; gap: 2px; flex-direction: column; font-size: 0.62rem; .mav { width: 18px; height: 18px; font-size: 0.52rem; } .mo-count { display: none; } }
+	.mo-mech.is-over span { color: #a50e24; }
+	.mo-mech.is-full span { color: #8f5300; }
+	.mo-mech.is-free span { display: none; }
+	.mo-deliv { font-size: 0.62rem; max-width: 100%; }
+
+	// scheda ordine: ricambi più compatti
+	.totals { justify-content: flex-start; gap: 8px 18px; padding: 12px 16px 16px; }
+	.task-row { padding: 12px 16px; }
+	.kpi { padding: 12px 14px; .kpi-value { font-size: 1.5rem; } }
+	dl.kv { grid-template-columns: 110px minmax(0, 1fr); }
+}

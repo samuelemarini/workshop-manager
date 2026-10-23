@@ -14,12 +14,12 @@
         <a class="btn btn-light btn-icon-lg" href="{{ path('planning_calendar', {mode: mode, day: next|date('Y-m-d')}) }}" aria-label="{{ mode == 'week' ? 'Settimana' : 'Mese' }} successiva"><i class="fa fa-chevron-right"></i></a>
         <a class="btn btn-primary" href="{{ path('order_new') }}"><i class="fa fa-plus"></i> Nuova accettazione</a>
     {% endset %}
-    {{ include('_page_header.html.twig', {icon: mode == 'week' ? 'fa-calendar-week' : 'fa-calendar', title: 'Calendario lavori', subtitle: title ~ (mode == 'week' ? ' · trascina un lavoro su un altro giorno o meccanico' : ' · tocca un giorno per aprirne il planning'), actions: actions}) }}
+    {{ include('_page_header.html.twig', {icon: mode == 'week' ? 'fa-calendar-week' : 'fa-calendar', title: 'Calendario lavori', subtitle: title ~ (mode == 'week' ? '<span class="hide-mobile"> · trascina un lavoro su un altro giorno o meccanico</span>' : ' · tocca un giorno per aprirne il planning'), actions: actions}) }}
 
     <section class="table-card">
         <div class="table-toolbar">
             {{ include('planning/_modes.html.twig', {current: mode}) }}
-            <div class="plan-legend">
+            <div class="plan-legend hide-mobile">
                 <span><i class="sw b-run"></i>In corso</span>
                 <span><i class="sw" style="border: 2px solid #1a1718"></i>Pianificata</span>
                 <span><i class="sw b-done"></i>Completata</span>
@@ -32,7 +32,34 @@
         {% if mode == 'week' %}
             {% set rows = mechanics|map(m => {key: m.id, mechanic: m, capacity: m.dailyHours * 60}) %}
             {% if unassigned %}{% set rows = rows|merge([{key: 0, mechanic: null, capacity: 0}]) %}{% endif %}
-            <div class="pg-wrap">
+            <div class="agenda only-mobile-block">
+                {% for key, d in days %}
+                    <div class="agenda-group{{ d.date == today ? ' is-today' }}">
+                        <a class="agenda-head agenda-day" href="{{ path('planning', {day: key}) }}">
+                            <span class="agenda-date"><small>{{ d.date|dow }}</small>{{ d.date|date('j') }}</span>
+                            <div class="flex-grow-1">
+                                <div class="fw-bold">{{ d.date|long_date|split(' ')|first|capitalize }}</div>
+                                <div class="mini text-muted">{% for m in mechanics %}{% if d.load[m.id] is defined %}{{ m.name }} {{ (d.load[m.id] / 60)|num(1) }} h · {% endif %}{% endfor %}{{ d.items|length }} lavori</div>
+                            </div>
+                            <i class="fa fa-chevron-right text-muted"></i>
+                        </a>
+                        {% for o in d.deliveries %}
+                            <a class="wk-delivery{{ o.status in ['READY', 'DELIVERED'] ? ' is-ready' }}{{ o.late ? ' is-late' }} mb-1" href="{{ path('order_show', {id: o.id}) }}"><i class="fa fa-key"></i> <b>{{ o.promisedAt|date('G:i') }}</b> {{ o.vehicle.name }} <span>{{ o.vehicle.plateLabel }}</span></a>
+                        {% endfor %}
+                        {% for i in d.items %}
+                            {% set o = i.task.workOrder %}
+                            <a class="agenda-item b-{{ i.kind }}" href="#" data-modal="{{ path('task_plan', {id: i.task.id}) }}" data-title="{{ o.code }} · {{ i.task.title }}">
+                                <span class="agenda-time">{{ i.time ?? '—' }}</span>
+                                <span class="agenda-body"><strong>{{ o.code }} · {{ i.task.title }}</strong><span>{{ o.vehicle.name }} · {{ (i.minutes / 60)|num(1) }} h</span></span>
+                                {{ ui.mav(i.task.mechanic) }}
+                            </a>
+                        {% endfor %}
+                        {% if not d.items|length and not d.deliveries|length %}<div class="mini text-muted pb-1">Niente in programma</div>{% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+
+            <div class="pg-wrap hide-mobile">
                 <div class="wk" id="weekGrid" style="--days: {{ days|length }}" data-move-url="{{ path('planning_move') }}" data-token="{{ csrf_token('submit') }}">
                     <div class="wk-row wk-head">
                         <div class="wk-label">Meccanico</div>

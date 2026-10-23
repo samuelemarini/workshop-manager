@@ -102,7 +102,7 @@ class DayPlanner
                     continue;
                 }
                 foreach ($this->freeWindows($row['bars'], $from, $end, [$lunchStart, $lunchEnd]) as [$a, $b]) {
-                    $row['free'][] = ['gc' => $col($a).' / span '.intdiv($b - $a, self::SLOT), 'label' => 'Libero '.$this->hm($b - $a), 'start' => $this->clock($a)];
+                    $row['free'][] = ['gc' => $col($a).' / span '.intdiv($b - $a, self::SLOT), 'label' => 'Libero '.$this->hm($b - $a), 'start' => $this->clock($a), 'range' => $this->clock($a).'–'.$this->clock($b), 'from' => $a];
                 }
             }
             unset($row);
@@ -199,6 +199,7 @@ class DayPlanner
             'c2' => max($col($from) + 1, $col($to)),
             'head' => $head,
             'text' => $text,
+            'range' => $this->clock($from).'–'.$this->clock($to),
             'title' => $this->clock($from).'–'.$this->clock($to).' · '.$task->getTitle().' · '.$order->getVehicle()->getPlateLabel().' · '.$task->getStatusLabel(),
             'draggable' => in_array($task->getStatus(), [Task::TODO, Task::PAUSED], true),
             'lane' => 1,

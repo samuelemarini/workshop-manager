@@ -278,3 +278,45 @@ body.op {
 
 .op-toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 30; padding: 14px 22px; border-radius: 14px; background: #fff; color: $ink; font-weight: 600; font-size: 1.05rem; box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5); animation: sheet-up 0.2s ease-out; }
 .op-toast-danger { background: #ff5a72; color: #fff; }
+
+// Telefono: barra compatta, cronometro e pulsanti che si adattano, righe impilate
+@media (max-width: 600px) {
+	.op-top {
+		height: 64px;
+		.mav { width: 40px !important; height: 40px !important; font-size: 0.95rem !important; }
+		.op-name { font-size: 1.2rem; }
+		.op-gbtn { min-height: 46px; padding: 0 12px; font-size: 0; gap: 0; i { font-size: 1.1rem; } }
+	}
+	.op-work, .op-center { min-height: 0; }
+	.op-panel { padding: 14px; border-radius: 16px; }
+	.op-title { font-size: 1.7rem; }
+	.op-timer { font-size: clamp(3rem, 19vw, 6.8rem); }
+	.op-timer-md { font-size: clamp(2.6rem, 15vw, 4.4rem); }
+	.op-current { padding: 14px; }
+	.op-big { min-height: 80px; font-size: 1.45rem; gap: 8px; }
+	.op-btn { padding: 0 14px; font-size: 1.05rem; }
+	.op-btn-xl { min-height: 64px; font-size: 1.15rem; }
+	.op-tabs button { font-size: 0.95rem; min-height: 50px; padding: 0 4px; .op-tabcount { display: block; } }
+	.op-report { white-space: normal; line-height: 1.15; padding: 10px 14px; font-size: 1rem; }
+
+	.op-row { flex-wrap: wrap; gap: 8px 12px; padding: 12px; }
+	.op-row > .flex-grow-1, .op-row > div[style*="flex: 1 1"] { flex: 1 1 calc(100% - 80px) !important; }
+	.op-row > a.op-btn, .op-row > form { flex: 1 1 40%; }
+	.op-row > form .op-btn { width: 100%; }
+	.op-row-done > .flex-grow-1 { flex-basis: 0 !important; }
+	.op-time { font-size: 1.25rem; min-width: 52px; }
+	.op-row-title { font-size: 1.1rem; }
+	.op-step button { width: 50px; height: 50px; }
+
+	.op-login-side { padding: 22px 18px; flex-direction: row; align-items: center; flex-wrap: wrap; border-right: none; border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
+	.op-bigclock { font-size: 3.2rem; }
+	.op-h1 { font-size: 2rem; }
+	.op-tile { min-height: 0; padding: 18px; flex-direction: row; text-align: left; gap: 14px; flex-wrap: wrap; .mav { width: 72px !important; height: 72px !important; font-size: 1.6rem !important; } }
+	.op-tile > .op-cond { font-size: 1.8rem !important; }
+	.op-tile > span:nth-child(n+3) { flex: 1 1 100%; }
+	.op-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; .op-stat { padding: 10px; } .op-cond { font-size: 1.6rem; } }
+	.op-done { padding: 22px 16px; }
+	.op-sheet { padding: 20px 16px 24px; }
+	.op-reason { min-height: 64px; font-size: 1.1rem; }
+	.op-toast { width: calc(100% - 28px); text-align: center; }
+}

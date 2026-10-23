@@ -8,7 +8,7 @@
         <a class="btn btn-light" href="{{ path('order_index') }}"><i class="fa fa-list"></i> Vista elenco</a>
         <a class="btn btn-primary" href="{{ path('order_new') }}"><i class="fa fa-plus"></i> Nuova accettazione</a>
     {% endset %}
-    {{ include('_page_header.html.twig', {icon: 'fa-table-columns', title: 'Bacheca lavori', subtitle: count ~ ' veicoli in officina · trascina una scheda per cambiarne lo stato', actions: actions}) }}
+    {{ include('_page_header.html.twig', {icon: 'fa-table-columns', title: 'Bacheca lavori', subtitle: count ~ ' veicoli in officina<span class="hide-mobile"> · trascina una scheda per cambiarne lo stato</span>', actions: actions}) }}
 
     <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap mb-3">
         <div class="filter-chips" id="boardFilter" role="group" aria-label="Filtra per meccanico">
@@ -19,10 +19,15 @@
         <div class="search-pill"><i class="fa fa-search"></i><input type="search" id="boardSearch" placeholder="Cerca targa, cliente, ordine..." aria-label="Cerca nella bacheca"></div>
     </div>
 
+    <nav class="board-jump only-mobile-block" aria-label="Vai alla colonna">
+        {% set short = {ACCEPTED: 'Da iniziare', IN_PROGRESS: 'In lavoro', WAITING: 'In attesa', READY: 'Pronte', DELIVERED: 'Consegnate'} %}
+        {% for status, col in columns %}<a href="#col-{{ status }}"><i class="kdot" style="background: {{ col.color }}"></i>{{ short[status] }} <b>{{ col.orders|length }}</b></a>{% endfor %}
+    </nav>
+
     <div class="board-wrap">
         <div class="board" id="board" data-token="{{ csrf_token('submit') }}">
             {% for status, col in columns %}
-                <section class="kcol" data-status="{{ status }}" aria-label="{{ col.label }}">
+                <section class="kcol" id="col-{{ status }}" data-status="{{ status }}" aria-label="{{ col.label }}">
                     <div class="kcol-head"><span><i class="kdot" style="background: {{ col.color }}"></i>{{ col.label }}</span><span class="kcount">{{ col.orders|length }}</span></div>
                     {% for o in col.orders %}
                         {% set tags = o.activeTasks|map(t => t.mechanic ? 'm' ~ t.mechanic.id : 'none')|join(' ') %}

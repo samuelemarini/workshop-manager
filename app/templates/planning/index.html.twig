@@ -11,7 +11,7 @@
         <input type="date" class="form-control" style="width: auto" value="{{ day|date('Y-m-d') }}" aria-label="Vai al giorno" onchange="location.href='{{ path('planning', {view: view}) }}&day='+this.value">
         <a class="btn btn-primary" href="{{ path('order_new') }}"><i class="fa fa-plus"></i> Nuova accettazione</a>
     {% endset %}
-    {{ include('_page_header.html.twig', {icon: 'fa-calendar-day', title: 'Planning meccanici', subtitle: day|long_date|capitalize ~ ' · trascina le lavorazioni per spostarle o assegnarle', actions: actions}) }}
+    {{ include('_page_header.html.twig', {icon: 'fa-calendar-day', title: 'Planning meccanici', subtitle: day|long_date|capitalize ~ '<span class="hide-mobile"> · trascina le lavorazioni per spostarle o assegnarle</span>', actions: actions}) }}
 
     <section class="table-card">
         <div class="table-toolbar">
@@ -27,7 +27,7 @@
                     {% endfor %}
                 </nav>
             </div>
-            <div class="plan-legend">
+            <div class="plan-legend hide-mobile">
                 <span><i class="sw b-run"></i>In corso</span>
                 <span><i class="sw" style="border: 2px solid #1a1718"></i>Pianificata</span>
                 <span><i class="sw b-done"></i>Completata</span>
@@ -37,7 +37,33 @@
             </div>
         </div>
 
-        <div class="pg-wrap">
+        {# telefono: agenda per riga (meccanico o postazione) #}
+        <div class="agenda only-mobile-block">
+            {% for row in grid.rows %}
+                <div class="agenda-group">
+                    <div class="agenda-head">
+                        <span class="mav mav-lg mc-{{ view == 'post' ? 'grey' : row.color }}">{{ row.initials }}</span>
+                        <div><div class="fw-bold">{{ row.name }}</div>{% if row.sub %}<div class="mini text-muted">{{ row.sub }}</div>{% endif %}</div>
+                    </div>
+                    {% set entries = row.bars|map(b => {from: b.from, bar: b, free: null})|merge(row.free|map(f => {from: f.from, bar: null, free: f}))|sort((a, b) => a.from <=> b.from) %}
+                    {% for e in entries %}
+                        {% if e.bar %}
+                            {% set b = e.bar %}
+                            <a class="agenda-item b-{{ b.kind }}" href="#" data-modal="{{ path('task_plan', {id: b.task.id}) }}" data-title="{{ b.task.workOrder.code }} · {{ b.task.title }}">
+                                <span class="agenda-time">{{ b.range }}</span>
+                                <span class="agenda-body"><strong>{{ b.head }}</strong><span>{{ b.text }}</span></span>
+                            </a>
+                        {% else %}
+                            <div class="agenda-item b-free"><span class="agenda-time">{{ e.free.range }}</span><span class="agenda-body"><strong>{{ e.free.label }}</strong></span></div>
+                        {% endif %}
+                    {% else %}
+                        <div class="mini text-muted py-2">Niente in programma</div>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+        </div>
+
+        <div class="pg-wrap hide-mobile">
             <div class="pg" id="planningGrid" style="--slots: {{ grid.slots }}" data-start="{{ grid.start }}" data-slot="15" data-day="{{ day|date('Y-m-d') }}" data-move-url="{{ path('planning_move') }}" data-token="{{ csrf_token('submit') }}">
                 <div class="pg-row pg-head">
                     <div class="pg-label">{{ view == 'post' ? 'Postazione' : 'Meccanico' }}</div>
@@ -80,7 +106,7 @@
     <div class="row g-4">
         <div class="col-xl-7">
             <section class="card-box mb-0">
-                <div class="card-title"><span><i class="fa fa-inbox"></i> Da pianificare</span><span class="mini text-muted">trascinale sul planning o usa Pianifica</span></div>
+                <div class="card-title"><span><i class="fa fa-inbox"></i> Da pianificare</span><span class="mini text-muted hide-mobile">trascinale sul planning o usa Pianifica</span></div>
                 {% for t in backlog %}
                     {% set o = t.workOrder %}
                     <div class="backlog-row" draggable="true" data-task="{{ t.id }}" data-minutes="{{ t.estimatedMinutes }}">
