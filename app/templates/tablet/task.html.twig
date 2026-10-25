@@ -19,7 +19,7 @@
                     <span style="font-size: 1.1rem; font-weight: 600">{{ o.vehicle.name }}{{ o.vehicle.version ? ' ' ~ o.vehicle.version }}</span>
                 </div>
                 <div class="op-cond op-title">{{ task.title }}</div>
-                <div class="op-mut">{{ o.code }}{{ task.workstation ? ' · ' ~ task.workstation.name }}{{ o.kmIn ? ' · ' ~ o.kmIn|num ~ ' km' }}{{ o.promisedAt ? ' · consegna ' ~ o.promisedAt|when }}</div>
+                <div class="op-mut">{{ o.code }}{{ o.kmIn ? ' · ' ~ o.kmIn|num ~ ' km' }}{{ o.promisedAt ? ' · consegna ' ~ o.promisedAt|when }}</div>
             </div>
             {% if o.customerRequest or task.description %}
                 <div class="op-quote">

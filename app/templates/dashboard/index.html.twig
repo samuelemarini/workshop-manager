@@ -51,7 +51,7 @@
                     {{ ui.mav(c.mechanic, 'lg') }}
                     <div class="flex-grow-1" style="min-width: 0">
                         <div class="mech-name">{{ c.mechanic.name }}</div>
-                        <div class="mini text-muted">{{ t and t.workstation ? t.workstation.name ~ ' · ' }}{{ c.todoCount }} lavorazioni ancora da fare</div>
+                        <div class="mini text-muted">{{ c.todoCount }} lavorazioni ancora da fare</div>
                     </div>
                     {% if t and t.status == 'RUNNING' %}
                         <span class="live">Al lavoro da {{ t.openEntry.startedAt|date('G:i') }}</span>

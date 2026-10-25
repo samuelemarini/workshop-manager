@@ -24,7 +24,7 @@ docker exec -u application -w /app officina-web-1 php bin/console app:demo     #
 ```
 
 - La console va lanciata come `application` (`-u application`): da root la cache diventa illeggibile per Apache.
-- `app:setup` è idempotente: ruoli, utente `admin`, e solo se le tabelle sono vuote postazioni (Ponte 1-3, Smontagomme), lavorazioni tipo (tagliando, pastiglie, gomme, pre-revisione...) e i meccanici Antonio e Riccardo.
+- `app:setup` è idempotente: ruoli, utente `admin`, e solo se le tabelle sono vuote lavorazioni tipo (tagliando, pastiglie, gomme, pre-revisione...) e i meccanici Antonio e Riccardo.
 - `app:demo` carica una mattina d'officina come nel mockup, con orari relativi a adesso, più gli utenti `ufficio` e `officina` (password `demo`). `--reset` cancella ordini, veicoli e clienti: **mai su dati veri**.
 
 ## Produzione
@@ -34,11 +34,11 @@ Come Carpin: stack Portainer da Git con `docker-compose.prod.yml` e tunnel Cloud
 ## Moduli
 
 - **Dashboard**: veicoli in officina, cosa sta facendo adesso ogni meccanico (cronometro, stima, prossimo lavoro), consegne di oggi, cose da gestire (OK del cliente, ritardi, lavorazioni senza meccanico, ricambi da ordinare o in arrivo), ore della settimana.
-- **Planning**: giornata a quarti d'ora per meccanico o per postazione, pausa pranzo, "adesso", spazi liberi, lavorazioni da pianificare; trascinando si cambia orario e meccanico/postazione. **Settimana** (meccanici × giorni con carico e consegne, trascinabile) e **mese** (ore per meccanico e consegne di ogni giorno).
+- **Planning**: giornata a quarti d'ora per meccanico, pausa pranzo, "adesso", spazi liberi, lavorazioni da pianificare; trascinando si cambia orario e meccanico. **Settimana** (meccanici × giorni con carico e consegne, trascinabile) e **mese** (ore per meccanico e consegne di ogni giorno).
 - **Bacheca lavori**: colonne Da iniziare / In lavorazione / In attesa / Pronta / Consegnate; trascinando si cambia stato (in "In attesa" chiede il motivo). Filtro per meccanico e ricerca.
 - **Ordini di lavoro**: accettazione (veicolo e cliente dall'anagrafica o nuovi al volo, lavorazioni tipo da spuntare), scheda con lavorazioni, registro tempi, ricambi e totali, foto, storico, stampa della scheda di lavoro.
-- **Postazione tablet** (`/tablet`): il meccanico tocca il suo nome (PIN facoltativo), vede lavoro in corso, prossimi e lavori liberi; avvia, mette in pausa con il motivo, termina; spunta i controlli, registra ricambi (anche "manca: da ordinare"), km, note e foto; segnala lavori extra o problemi di sicurezza, che l'ufficio approva o rifiuta.
-- **Clienti**, **Veicoli** (con storico interventi), **Meccanici e ore** (ore per giorno, stimato contro effettivo), **Utenti**, **Impostazioni** (orari, pausa, tariffa oraria, postazioni, lavorazioni tipo).
+- **Tablet officina** (`/tablet`): il meccanico tocca il suo nome (PIN facoltativo), vede lavoro in corso, prossimi e lavori liberi; avvia, mette in pausa con il motivo, termina; spunta i controlli, registra ricambi (anche "manca: da ordinare"), km, note e foto; segnala lavori extra o problemi di sicurezza, che l'ufficio approva o rifiuta.
+- **Clienti**, **Veicoli** (con storico interventi), **Meccanici e ore** (ore per giorno, stimato contro effettivo), **Utenti**, **Impostazioni** (orari, pausa, tariffa oraria, lavorazioni tipo).
 
 ## Regole
 
@@ -54,4 +54,4 @@ Come Carpin: stack Portainer da Git con `docker-compose.prod.yml` e tunnel Cloud
 |---|---|
 | Amministratore | tutto, più utenti e impostazioni |
 | Ufficio | accettazione, ordini, planning, bacheca, clienti, veicoli, meccanici; può aprire anche il tablet |
-| Tablet officina | solo la postazione tablet: è l'utente con cui si collega il tablet in officina |
+| Tablet officina | solo il tablet: è l'utente con cui si collega il tablet in officina |

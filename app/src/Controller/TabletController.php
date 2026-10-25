@@ -20,7 +20,7 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 /**
- * Postazione tablet in officina. Il tablet è collegato con un utente "Tablet officina";
+ * Tablet in officina. Il tablet è collegato con un utente "Tablet officina";
  * il meccanico si sceglie toccando il proprio nome (PIN facoltativo) e resta in sessione
  * finché non tocca "Cambia operatore" o il tablet resta fermo qualche minuto.
  */
@@ -340,7 +340,7 @@ class TabletController extends AppController
         } else {
             $minutes = max(0, $request->request->getInt('minutes'));
             $extra = (new Task())->setTitle(mb_substr($text, 0, 150))->setDescription(mb_strlen($text) > 150 ? $text : null)
-                ->setEstimatedMinutes($minutes ?: 30)->setUrgent($kind === 'urgent')->setWorkstation($task->getWorkstation());
+                ->setEstimatedMinutes($minutes ?: 30)->setUrgent($kind === 'urgent');
             $this->workflow->propose($order, $extra, $me, $this->user());
             $this->em->persist($extra);
         }

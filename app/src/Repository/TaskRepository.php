@@ -22,12 +22,11 @@ class TaskRepository extends ServiceEntityRepository
     private function withOrder(): QueryBuilder
     {
         return $this->createQueryBuilder('t')
-            ->addSelect('o', 'v', 'c', 'm', 'w', 'e')
+            ->addSelect('o', 'v', 'c', 'm', 'e')
             ->join('t.workOrder', 'o')
             ->join('o.vehicle', 'v')
             ->join('o.customer', 'c')
             ->leftJoin('t.mechanic', 'm')
-            ->leftJoin('t.workstation', 'w')
             ->leftJoin('t.timeEntries', 'e');
     }
 

@@ -5,10 +5,10 @@
 
 {% block body %}
     {% set actions %}
-        <a class="btn btn-light btn-icon-lg" href="{{ path('planning', {day: day.modify('-1 day')|date('Y-m-d'), view: view}) }}" aria-label="Giorno precedente"><i class="fa fa-chevron-left"></i></a>
-        <a class="btn btn-light" href="{{ path('planning', {view: view}) }}">Oggi</a>
-        <a class="btn btn-light btn-icon-lg" href="{{ path('planning', {day: day.modify('+1 day')|date('Y-m-d'), view: view}) }}" aria-label="Giorno successivo"><i class="fa fa-chevron-right"></i></a>
-        <input type="date" class="form-control" style="width: auto" value="{{ day|date('Y-m-d') }}" aria-label="Vai al giorno" onchange="location.href='{{ path('planning', {view: view}) }}&day='+this.value">
+        <a class="btn btn-light btn-icon-lg" href="{{ path('planning', {day: day.modify('-1 day')|date('Y-m-d')}) }}" aria-label="Giorno precedente"><i class="fa fa-chevron-left"></i></a>
+        <a class="btn btn-light" href="{{ path('planning') }}">Oggi</a>
+        <a class="btn btn-light btn-icon-lg" href="{{ path('planning', {day: day.modify('+1 day')|date('Y-m-d')}) }}" aria-label="Giorno successivo"><i class="fa fa-chevron-right"></i></a>
+        <input type="date" class="form-control" style="width: auto" value="{{ day|date('Y-m-d') }}" aria-label="Vai al giorno" onchange="location.href='{{ path('planning') }}?day='+this.value">
         <a class="btn btn-primary" href="{{ path('order_new') }}"><i class="fa fa-plus"></i> Nuova accettazione</a>
     {% endset %}
     {{ include('_page_header.html.twig', {icon: 'fa-calendar-day', title: 'Planning meccanici', subtitle: day|long_date|capitalize ~ '<span class="hide-mobile"> · trascina le lavorazioni per spostarle o assegnarle</span>', actions: actions}) }}
@@ -17,13 +17,9 @@
         <div class="table-toolbar">
             <div class="d-flex gap-3 flex-wrap align-items-center">
                 {{ include('planning/_modes.html.twig', {current: 'day'}) }}
-                <div class="seg" role="group" aria-label="Raggruppa per">
-                    <a class="{{ view == 'mech' ? 'active' }}" href="{{ path('planning', {day: day|date('Y-m-d'), view: 'mech'}) }}">Per meccanico</a>
-                    <a class="{{ view == 'post' ? 'active' }}" href="{{ path('planning', {day: day|date('Y-m-d'), view: 'post'}) }}">Per postazione</a>
-                </div>
                 <nav class="day-chips" aria-label="Giorni della settimana">
                     {% for d in days %}
-                        <a class="{{ d|date('Ymd') == day|date('Ymd') ? 'active' }}{{ d|date('Ymd') == today|date('Ymd') ? ' today' }}" href="{{ path('planning', {day: d|date('Y-m-d'), view: view}) }}">{{ d|dow }}<b>{{ d|date('j') }}</b></a>
+                        <a class="{{ d|date('Ymd') == day|date('Ymd') ? 'active' }}{{ d|date('Ymd') == today|date('Ymd') ? ' today' }}" href="{{ path('planning', {day: d|date('Y-m-d')}) }}">{{ d|dow }}<b>{{ d|date('j') }}</b></a>
                     {% endfor %}
                 </nav>
             </div>
@@ -37,12 +33,12 @@
             </div>
         </div>
 
-        {# telefono: agenda per riga (meccanico o postazione) #}
+        {# telefono: agenda per meccanico #}
         <div class="agenda only-mobile-block">
             {% for row in grid.rows %}
                 <div class="agenda-group">
                     <div class="agenda-head">
-                        <span class="mav mav-lg mc-{{ view == 'post' ? 'grey' : row.color }}">{{ row.initials }}</span>
+                        <span class="mav mav-lg mc-{{ row.color }}">{{ row.initials }}</span>
                         <div><div class="fw-bold">{{ row.name }}</div>{% if row.sub %}<div class="mini text-muted">{{ row.sub }}</div>{% endif %}</div>
                     </div>
                     {% set entries = row.bars|map(b => {from: b.from, bar: b, free: null})|merge(row.free|map(f => {from: f.from, bar: null, free: f}))|sort((a, b) => a.from <=> b.from) %}
@@ -66,18 +62,14 @@
         <div class="pg-wrap hide-mobile">
             <div class="pg" id="planningGrid" style="--slots: {{ grid.slots }}" data-start="{{ grid.start }}" data-slot="15" data-day="{{ day|date('Y-m-d') }}" data-move-url="{{ path('planning_move') }}" data-token="{{ csrf_token('submit') }}">
                 <div class="pg-row pg-head">
-                    <div class="pg-label">{{ view == 'post' ? 'Postazione' : 'Meccanico' }}</div>
+                    <div class="pg-label">Meccanico</div>
                     {% for h in grid.hours %}<div class="pg-hour" style="grid-column: {{ h.col }} / span {{ h.span }}">{{ h.label }}</div>{% endfor %}
                     {% if grid.now %}<div class="pg-now-label" style="grid-column: {{ grid.now.col }}; margin-left: {{ grid.now.offset }}%">{{ grid.now.label }}</div>{% endif %}
                 </div>
                 {% for row in grid.rows %}
                     <div class="pg-row" style="--lanes: {{ row.lanes }}" data-drop-row {% for k, v in row.target %}data-{{ k }}="{{ v }}"{% endfor %}>
                         <div class="pg-label">
-                            {% if view == 'post' %}
-                                <span class="mav mav-lg" style="background: #f2f1f0; color: #1a1718">{{ row.initials }}</span>
-                            {% else %}
-                                <span class="mav mav-lg mc-{{ row.color }}">{{ row.initials }}</span>
-                            {% endif %}
+                            <span class="mav mav-lg mc-{{ row.color }}">{{ row.initials }}</span>
                             <div style="min-width: 0">
                                 <div class="pg-name">{{ row.name }}</div>
                                 {% if row.sub %}<div class="pg-sub">{{ row.sub }}</div>{% endif %}
@@ -97,7 +89,7 @@
                         {% if grid.now %}<div class="pg-now" style="grid-column: {{ grid.now.col }}; margin-left: {{ grid.now.offset }}%"></div>{% endif %}
                     </div>
                 {% else %}
-                    <div class="empty-state">Nessun {{ view == 'post' ? 'postazione' : 'meccanico' }} attivo: aggiungili dalle impostazioni.</div>
+                    <div class="empty-state">Nessun meccanico attivo: aggiungili dalle impostazioni.</div>
                 {% endfor %}
             </div>
         </div>

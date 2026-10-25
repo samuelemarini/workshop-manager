@@ -5,7 +5,6 @@ namespace App\Form;
 use App\Entity\Mechanic;
 use App\Entity\Task;
 use App\Entity\TaskTemplate;
-use App\Entity\Workstation;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\DateTimeType;
@@ -46,13 +45,6 @@ class TaskType extends AbstractType
                 'required' => false,
                 'placeholder' => 'Da assegnare',
                 'query_builder' => fn ($r) => $r->createQueryBuilder('m')->where('m.cancel = 0')->orderBy('m.sort')->addOrderBy('m.name'),
-            ])
-            ->add('workstation', EntityType::class, [
-                'label' => 'Postazione',
-                'class' => Workstation::class,
-                'required' => false,
-                'placeholder' => '—',
-                'query_builder' => fn ($r) => $r->createQueryBuilder('w')->where('w.cancel = 0')->orderBy('w.sort')->addOrderBy('w.name'),
             ])
             ->add('plannedStart', DateTimeType::class, ['label' => 'Pianificata per', 'required' => false, 'widget' => 'single_text', 'help' => 'Vuoto = da pianificare'])
             ->add('estimatedMinutes', IntegerType::class, ['label' => 'Tempo stimato (minuti)', 'attr' => ['min' => 0, 'step' => 5]]);

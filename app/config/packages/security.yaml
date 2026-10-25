@@ -8,7 +8,7 @@ security:
                 class: App\Entity\User
                 property: username
 
-    # L'amministratore eredita ufficio e tablet; l'ufficio può aprire anche la postazione tablet.
+    # L'amministratore eredita ufficio e tablet; l'ufficio può aprire anche il tablet.
     # Attenzione: la gerarchia vale per is_granted(), non per le query sui ruoli salvati
     # (es. UserRepository::findActiveByRole).
     role_hierarchy:

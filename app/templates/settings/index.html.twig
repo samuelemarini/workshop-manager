@@ -3,7 +3,7 @@
 {% block title %}Impostazioni{% endblock %}
 
 {% block body %}
-    {{ include('_page_header.html.twig', {icon: 'fa-sliders', title: 'Impostazioni', subtitle: 'Orari dell\'officina, postazioni e lavorazioni tipo · le voci già usate si disattivano, non si cancellano'}) }}
+    {{ include('_page_header.html.twig', {icon: 'fa-sliders', title: 'Impostazioni', subtitle: 'Orari dell\'officina e lavorazioni tipo · le voci già usate si disattivano, non si cancellano'}) }}
 
     <div class="row g-4">
         <div class="col-xl-5 d-flex flex-column gap-4">
@@ -21,40 +21,6 @@
                     <div class="mini text-muted mb-3">Orari e pausa disegnano il planning; la tariffa serve per i totali stimati e la scheda stampata.</div>
                     <div class="text-end"><button class="btn btn-primary"><i class="fa fa-check"></i> Salva</button></div>
                 </form>
-            </section>
-
-            <section class="card-box mb-0">
-                <div class="card-title"><span><i class="fa fa-warehouse"></i> Postazioni</span></div>
-                <form class="d-flex gap-2 mb-3 flex-wrap" method="post" action="{{ path('settings_workstation_save') }}">
-                    <input type="hidden" name="_token" value="{{ csrf_token('submit') }}">
-                    <input class="form-control" style="flex: 1 1 140px" name="name" placeholder="Nuova postazione..." required aria-label="Nome">
-                    <input class="form-control" style="flex: 1 1 160px" name="description" placeholder="Descrizione" aria-label="Descrizione">
-                    <input class="form-control" style="max-width: 80px" type="number" name="sort" value="{{ (workstations|length + 1) * 10 }}" aria-label="Ordine">
-                    <button class="btn btn-primary"><i class="fa fa-plus"></i></button>
-                </form>
-                <table class="app-table">
-                    <tbody>
-                        {% for row in workstations %}
-                            <tr class="{{ row.cancel ? 'row-muted' }}">
-                                <td>
-                                    <form class="d-flex gap-2" method="post" action="{{ path('settings_workstation_save') }}">
-                                        <input type="hidden" name="_token" value="{{ csrf_token('submit') }}">
-                                        <input type="hidden" name="id" value="{{ row.id }}">
-                                        <input class="form-control form-control-sm border-0 bg-transparent fw-semibold{{ row.cancel ? ' text-decoration-line-through' }}" name="name" value="{{ row.name }}" onchange="this.form.submit()" aria-label="Nome">
-                                        <input class="form-control form-control-sm border-0 bg-transparent" name="description" value="{{ row.description }}" onchange="this.form.submit()" aria-label="Descrizione">
-                                        <input class="form-control form-control-sm border-0 bg-transparent" style="max-width: 70px" type="number" name="sort" value="{{ row.sort }}" onchange="this.form.submit()" aria-label="Ordine">
-                                    </form>
-                                </td>
-                                <td class="actions">
-                                    <form method="post" action="{{ path('settings_workstation_toggle', {id: row.id}) }}">
-                                        <input type="hidden" name="_token" value="{{ csrf_token('submit') }}">
-                                        <button class="btn btn-light btn-sm">{{ row.cancel ? 'Riattiva' : 'Disattiva' }}</button>
-                                    </form>
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
             </section>
         </div>
 

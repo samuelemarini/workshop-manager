@@ -33,7 +33,7 @@
                     <li><a class="nav-link{{ route starts with 'planning' or route == 'task_plan' ? ' active' }}" href="{{ path('planning') }}"><i class="fa fa-calendar-day"></i><span>Planning meccanici</span></a></li>
                     <li><a class="nav-link{{ route == 'board' ? ' active' }}" href="{{ path('board') }}"><i class="fa fa-table-columns"></i><span>Bacheca lavori</span>{% if proposed_count() %}<span class="badge rounded-pill bg-danger" title="Lavori extra da autorizzare">{{ proposed_count() }}</span>{% endif %}</a></li>
                     <li><a class="nav-link{{ route starts with 'order_' or route starts with 'task_' or route starts with 'part_' ? ' active' }}" href="{{ path('order_index') }}"><i class="fa fa-clipboard-list"></i><span>Ordini di lavoro</span></a></li>
-                    <li><a class="nav-link" href="{{ path('tablet') }}"><i class="fa fa-tablet-screen-button"></i><span>Postazione tablet</span></a></li>
+                    <li><a class="nav-link" href="{{ path('tablet') }}"><i class="fa fa-tablet-screen-button"></i><span>Tablet officina</span></a></li>
 
                     <li class="nav-section">Anagrafiche</li>
                     <li><a class="nav-link{{ route starts with 'customer_' ? ' active' }}" href="{{ path('customer_index') }}"><i class="fa fa-user-group"></i><span>Clienti</span></a></li>

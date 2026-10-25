@@ -14,7 +14,6 @@ use App\Entity\TimeEntry;
 use App\Entity\User;
 use App\Entity\Vehicle;
 use App\Entity\WorkOrder;
-use App\Entity\Workstation;
 use App\Repository\WorkOrderRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -34,8 +33,6 @@ class DemoCommand
     private \DateTimeImmutable $today;
     /** @var array<string, Mechanic> */
     private array $mech = [];
-    /** @var array<string, Workstation> */
-    private array $post = [];
     /** @var array<string, TaskTemplate> */
     private array $tpl = [];
 
@@ -67,14 +64,11 @@ class DemoCommand
         foreach ($this->em->getRepository(Mechanic::class)->findBy(['cancel' => 0], ['sort' => 'ASC']) as $m) {
             $this->mech[$m->getName()] = $m;
         }
-        foreach ($this->em->getRepository(Workstation::class)->findAll() as $w) {
-            $this->post[$w->getName()] = $w;
-        }
         foreach ($this->em->getRepository(TaskTemplate::class)->findAll() as $t) {
             $this->tpl[$t->getName()] = $t;
         }
-        if (!isset($this->mech['Antonio'], $this->mech['Riccardo'], $this->post['Ponte 1'])) {
-            $io->error('Lancia prima app:setup (servono Antonio, Riccardo e le postazioni di base).');
+        if (!isset($this->mech['Antonio'], $this->mech['Riccardo'])) {
+            $io->error('Lancia prima app:setup (servono Antonio e Riccardo).');
 
             return 1;
         }
@@ -113,36 +107,32 @@ class DemoCommand
 
         $an = $this->mech['Antonio'];
         $ri = $this->mech['Riccardo'];
-        $p1 = $this->post['Ponte 1'];
-        $p2 = $this->post['Ponte 2'] ?? $p1;
-        $p3 = $this->post['Ponte 3'] ?? $p1;
-        $sg = $this->post['Smontagomme'] ?? $p1;
         $number = 181;
 
         // consegnati nei giorni scorsi (per il report ore della settimana)
         $o = $this->order(++$number, $v['ducato'], $c['lago'], -3, 'Tagliando e ammortizzatori posteriori che battono.', 211800);
-        $this->task($o, 'Tagliando', $an, $p2, Task::DONE, [[-3, '08:10', '10:05']]);
-        $this->task($o, 'Sostituzione ammortizzatori posteriori', $ri, $p2, Task::DONE, [[-3, '10:20', '12:15'], [-3, '14:00', '14:40']], 150);
+        $this->task($o, 'Tagliando', $an, Task::DONE, [[-3, '08:10', '10:05']]);
+        $this->task($o, 'Sostituzione ammortizzatori posteriori', $ri, Task::DONE, [[-3, '10:20', '12:15'], [-3, '14:00', '14:40']], 150);
         $this->part($o, 'Ammortizzatori posteriori', 2, 'pz', 78.5);
         $o->setStatus(WorkOrder::DELIVERED)->setReadyAt($this->at(-3, '14:45'))->setDeliveredAt($this->at(-3, '17:30'));
 
         $o = $this->order(++$number, $v['p208'], $c['sala'], -1, 'L\'aria condizionata non raffredda più.', 77050);
-        $this->task($o, 'Ricarica climatizzatore', $ri, $p3, Task::DONE, [[-1, '09:00', '09:52']]);
+        $this->task($o, 'Ricarica climatizzatore', $ri, Task::DONE, [[-1, '09:00', '09:52']]);
         $o->setStatus(WorkOrder::DELIVERED)->setReadyAt($this->at(-1, '09:55'))->setDeliveredAt($this->at(-1, '12:10'));
 
         // pronta: lavorata ieri, collaudo stamattina
         $o = $this->order(++$number, $v['audi'], $c['conti'], -2, 'Distribuzione da fare a 120.000, e controllare perdita di liquido.', 121040, '17:00');
-        $this->task($o, 'Kit distribuzione', $an, $p1, Task::DONE, [[-1, '08:05', '12:30'], [-1, '14:00', '15:10']], 240);
-        $this->task($o, 'Collaudo e prova su strada', $an, $p1, Task::DONE, [[0, '08:00', '08:45']], 45);
+        $this->task($o, 'Kit distribuzione', $an, Task::DONE, [[-1, '08:05', '12:30'], [-1, '14:00', '15:10']], 240);
+        $this->task($o, 'Collaudo e prova su strada', $an, Task::DONE, [[0, '08:00', '08:45']], 45);
         $this->part($o, 'Kit distribuzione con pompa acqua', 1, 'set', 189.0, 'KTBWP7880');
         $this->part($o, 'Liquido refrigerante', 5, 'l', 6.2);
         $o->setStatus(WorkOrder::READY)->setReadyAt($this->at(0, '08:45'))->setCustomerNotifiedAt($this->at(-1, '18:10'));
 
         // in attesa di ricambi
         $o = $this->order(++$number, $v['transit'], $c['benaco'], -1, 'La frizione slitta e vibra in partenza.', 187600, null, 3);
-        $this->task($o, 'Smontaggio frizione', $ri, $p2, Task::DONE, [[0, '08:00', '09:30']], 90);
-        $this->task($o, 'Montaggio frizione e volano', $ri, $p2, Task::TODO, [], 210);
-        $this->task($o, 'Prova su strada', $ri, null, Task::TODO, [], 20);
+        $this->task($o, 'Smontaggio frizione', $ri, Task::DONE, [[0, '08:00', '09:30']], 90);
+        $this->task($o, 'Montaggio frizione e volano', $ri, Task::TODO, [], 210);
+        $this->task($o, 'Prova su strada', $ri, Task::TODO, [], 20);
         $this->part($o, 'Volano bimassa LuK', 1, 'pz', 412.0, '415063610', Part::ORDERED, '+3 days', 'Autoricambi Garda');
         $this->part($o, 'Kit frizione', 1, 'set', 268.0, '624320609', Part::ORDERED, '+3 days', 'Autoricambi Garda');
         $o->setStatus(WorkOrder::WAITING)->setWaitingReason('Attesa ricambi · volano bimassa in arrivo');
@@ -150,12 +140,12 @@ class DemoCommand
         // in lavorazione adesso: Antonio sul tagliando della Panda
         $o = $this->order(++$number, $v['panda'], $c['bianchi'], -1, 'Tagliando dei 60.000. Quando freno piano davanti fischia.', 59870, '18:00');
         $o->setQuoteAmount(258.20)->setIntakeNotes('Graffio sul paraurti posteriore destro già presente. Seggiolino bimbo in auto.');
-        $t = $this->task($o, 'Tagliando', $an, $p1, Task::RUNNING, [[-110, -60, 'Attesa ricambi'], [-50, null]], 120);
+        $t = $this->task($o, 'Tagliando', $an, Task::RUNNING, [[-110, -60, 'Attesa ricambi'], [-50, null]], 120);
         $t->toggleCheck(0);
         $t->toggleCheck(1);
         $t->toggleCheck(2);
         $t->toggleCheck(3);
-        $this->task($o, 'Pastiglie freni anteriori', $an, $p1, Task::TODO, [], 60, $this->later(30));
+        $this->task($o, 'Pastiglie freni anteriori', $an, Task::TODO, [], 60, $this->later(30));
         $this->propose($o, 'Spazzole tergicristallo usurate, lasciano righe: consiglio di sostituirle', $an, -28, 10);
         $this->part($o, 'Olio motore 5W-30', 4, 'l', 9.5, 'SEL-5W30', Part::STOCK, null, null, $t);
         $this->part($o, 'Filtro olio', 1, 'pz', 9.8, null, Part::STOCK, null, null, $t);
@@ -166,16 +156,16 @@ class DemoCommand
 
         // in lavorazione adesso: Riccardo sulla diagnosi della Golf
         $o = $this->order(++$number, $v['golf'], $c['rossi'], 0, 'Si è accesa la spia motore e in salita tira poco.', 148300, null, 1);
-        $this->task($o, 'Diagnosi elettronica', $ri, $p3, Task::RUNNING, [[-65, null]], 90);
+        $this->task($o, 'Diagnosi elettronica', $ri, Task::RUNNING, [[-65, null]], 90);
         $this->propose($o, 'Sostituzione valvola EGR (intasata): preventivo 420 €', $ri, -20, 120, $this->later(150));
         $o->setStatus(WorkOrder::IN_PROGRESS);
 
         // da iniziare
         $o = $this->order(++$number, $v['yaris'], $c['ferri'], 0, 'Montare le invernali, le estive restano in deposito.', 38220, '15:30');
-        $this->task($o, 'Cambio gomme stagionale', $an, $sg, Task::TODO, [], 60, $this->later(150));
+        $this->task($o, 'Cambio gomme stagionale', $an, Task::TODO, [], 60, $this->later(150));
 
         $o = $this->order(++$number, $v['clio'], $c['marchi'], 0, 'Revisione in scadenza: controllare tutto prima della motorizzazione.', 112450, '18:00');
-        $this->task($o, 'Pre-revisione', null, null, Task::TODO, [], 60);
+        $this->task($o, 'Pre-revisione', null, Task::TODO, [], 60);
 
         $o = $this->order(++$number, $v['jeep'], $c['galli'], 0, 'Rumore dalla sospensione anteriore sulle buche.', 64300, null, 2);
         $t = (new Task())->setTitle('Diagnosi rumore sospensione anteriore')->setMechanic($ri)->setEstimatedMinutes(90)
@@ -245,10 +235,10 @@ class DemoCommand
     /**
      * @param array $entries registrazioni: [giorno, 'hh:mm', 'hh:mm'] oppure [minuti da adesso, minuti da adesso|null, motivo]
      */
-    private function task(WorkOrder $order, string $title, ?Mechanic $mechanic, ?Workstation $post, string $status, array $entries, ?int $minutes = null, ?\DateTime $planned = null): Task
+    private function task(WorkOrder $order, string $title, ?Mechanic $mechanic, string $status, array $entries, ?int $minutes = null, ?\DateTime $planned = null): Task
     {
         $task = isset($this->tpl[$title]) ? Task::fromTemplate($this->tpl[$title]) : (new Task())->setTitle($title);
-        $task->setMechanic($mechanic)->setWorkstation($post)->setStatus($status)->setPlannedStart($planned);
+        $task->setMechanic($mechanic)->setStatus($status)->setPlannedStart($planned);
         if ($minutes) {
             $task->setEstimatedMinutes($minutes);
         }

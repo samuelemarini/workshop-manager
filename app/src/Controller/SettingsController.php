@@ -3,7 +3,6 @@
 namespace App\Controller;
 
 use App\Entity\TaskTemplate;
-use App\Entity\Workstation;
 use App\Form\TaskTemplateType;
 use App\Repository\SettingRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -13,8 +12,8 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 /**
- * Impostazioni dell'officina (solo amministratori): orari e tariffa, postazioni, lavorazioni tipo.
- * Postazioni e lavorazioni tipo usate non si cancellano: si disattivano.
+ * Impostazioni dell'officina (solo amministratori): orari e tariffa, lavorazioni tipo.
+ * Le lavorazioni tipo usate non si cancellano: si disattivano.
  */
 #[Route('/settings')]
 #[IsGranted('ROLE_ADMIN')]
@@ -25,7 +24,6 @@ class SettingsController extends AppController
     {
         return $this->render('settings/index.html.twig', [
             'settings' => $settings->all(),
-            'workstations' => $em->getRepository(Workstation::class)->findBy([], ['cancel' => 'ASC', 'sort' => 'ASC', 'name' => 'ASC']),
             'templates' => $em->getRepository(TaskTemplate::class)->findBy([], ['cancel' => 'ASC', 'sort' => 'ASC', 'name' => 'ASC']),
         ]);
     }
@@ -43,35 +41,6 @@ class SettingsController extends AppController
         }
         $em->flush();
         $this->addFlash('success', 'Impostazioni salvate');
-
-        return $this->redirectToRoute('settings_index');
-    }
-
-    #[Route('/workstation/save', name: 'settings_workstation_save', methods: ['POST'])]
-    public function saveWorkstation(Request $request, EntityManagerInterface $em): Response
-    {
-        $this->checkToken($request);
-        $name = trim((string) $request->request->get('name'));
-        $id = $request->request->getInt('id');
-        if ($name !== '') {
-            $row = $id ? $em->find(Workstation::class, $id) : new Workstation();
-            if (!$row) {
-                throw $this->createNotFoundException();
-            }
-            $row->setName($name)->setDescription(trim((string) $request->request->get('description')) ?: null)->setSort($request->request->getInt('sort'));
-            $em->persist($row);
-            $em->flush();
-        }
-
-        return $this->redirectToRoute('settings_index');
-    }
-
-    #[Route('/workstation/{id}/toggle', name: 'settings_workstation_toggle', methods: ['POST'])]
-    public function toggleWorkstation(Request $request, Workstation $workstation, EntityManagerInterface $em): Response
-    {
-        $this->checkToken($request);
-        $workstation->setCancel($workstation->getCancel() ? 0 : 1);
-        $em->flush();
 
         return $this->redirectToRoute('settings_index');
     }

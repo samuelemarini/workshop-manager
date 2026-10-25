@@ -18,7 +18,7 @@ class DashboardController extends AppController
     #[Route('/', name: 'homepage')]
     public function index(WorkOrderRepository $orders, TaskRepository $tasks, MechanicRepository $mechanics, TimeEntryRepository $entries): Response
     {
-        // l'account del tablet vede solo la postazione officina
+        // l'account del tablet vede solo la schermata tablet
         if (!$this->isGranted('ROLE_OFFICE')) {
             return $this->redirectToRoute('tablet');
         }

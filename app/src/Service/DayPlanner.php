@@ -4,15 +4,13 @@ namespace App\Service;
 
 use App\Entity\Mechanic;
 use App\Entity\Task;
-use App\Entity\Workstation;
 use App\Repository\MechanicRepository;
 use App\Repository\SettingRepository;
 use App\Repository\TaskRepository;
 use App\Repository\TimeEntryRepository;
-use App\Repository\WorkstationRepository;
 
 /**
- * Griglia del planning di un giorno: una riga per meccanico (o per postazione), colonne da 15 minuti
+ * Griglia del planning di un giorno: una riga per meccanico, colonne da 15 minuti
  * fra apertura e chiusura dell'officina.
  *
  * Dove sta una barra:
@@ -27,7 +25,6 @@ class DayPlanner
     public function __construct(
         private TaskRepository $tasks,
         private MechanicRepository $mechanics,
-        private WorkstationRepository $workstations,
         private TimeEntryRepository $entries,
         private SettingRepository $settings,
     ) {
@@ -36,7 +33,7 @@ class DayPlanner
     /**
      * @return array{start: int, end: int, slots: int, hours: array, lunch: ?array, now: ?array, rows: array, loads: array}
      */
-    public function day(\DateTimeImmutable $day, string $view): array
+    public function day(\DateTimeImmutable $day): array
     {
         $start = $this->settings->minutes('day_start');
         $end = max($start + 60, $this->settings->minutes('day_end'));
@@ -61,14 +58,8 @@ class DayPlanner
 
         // righe
         $rows = [];
-        if ($view === 'post') {
-            foreach ($this->workstations->findActive() as $w) {
-                $rows[$w->getId()] = $this->row('w'.$w->getId(), $w->getName(), $w->getDescription(), $w->getShortName(), 'grey', ['workstation' => $w->getId()]);
-            }
-        } else {
-            foreach ($this->mechanics->findActive() as $m) {
-                $rows[$m->getId()] = $this->row('m'.$m->getId(), $m->getName(), null, $m->getInitials(), $m->getColor(), ['mechanic' => $m->getId()]);
-            }
+        foreach ($this->mechanics->findActive() as $m) {
+            $rows[$m->getId()] = $this->row('m'.$m->getId(), $m->getName(), null, $m->getInitials(), $m->getColor(), ['mechanic' => $m->getId()]);
         }
 
         $dayStart = $day->setTime(0, 0);
@@ -78,12 +69,12 @@ class DayPlanner
             if ($from === null || $to <= $start || $from >= $end) {
                 continue;
             }
-            $key = $view === 'post' ? $task->getWorkstation()?->getId() : $task->getMechanic()?->getId();
+            $key = $task->getMechanic()?->getId();
             if ($key === null || !isset($rows[$key])) {
                 $key = 0;
-                $rows[0] ??= $this->row('none', $view === 'post' ? 'Senza postazione' : 'Da assegnare', null, '?', 'none', $view === 'post' ? ['workstation' => ''] : ['mechanic' => '']);
+                $rows[0] ??= $this->row('none', 'Da assegnare', null, '?', 'none', ['mechanic' => '']);
             }
-            $rows[$key]['bars'][] = $this->bar($task, $from, $to, $col, $view, $now);
+            $rows[$key]['bars'][] = $this->bar($task, $from, $to, $col, $now);
             if ($task->getMechanic() && $task->counts()) {
                 $planned[$task->getMechanic()->getId()] = ($planned[$task->getMechanic()->getId()] ?? 0) + ($to - $from);
             }
@@ -95,7 +86,7 @@ class DayPlanner
         unset($row);
 
         // spazi liberi di almeno un'ora per ogni meccanico (solo oggi e giorni futuri)
-        if ($view !== 'post' && $day >= $now->setTime(0, 0)) {
+        if ($day >= $now->setTime(0, 0)) {
             $from = $isToday ? max($start, (int) (ceil($nowMinute / self::SLOT) * self::SLOT)) : $start;
             foreach ($rows as $id => &$row) {
                 if ($id === 0) {
@@ -169,7 +160,7 @@ class DayPlanner
         return [null, 0];
     }
 
-    private function bar(Task $task, int $from, int $to, callable $col, string $view, \DateTimeImmutable $now): array
+    private function bar(Task $task, int $from, int $to, callable $col, \DateTimeImmutable $now): array
     {
         $kind = match ($task->getStatus()) {
             Task::RUNNING => 'run',
@@ -180,9 +171,6 @@ class DayPlanner
         };
         $order = $task->getWorkOrder();
         $head = $order->getCode();
-        if ($view === 'post' && $task->getMechanic()) {
-            $head = $task->getMechanic()->getInitials().' · '.$head;
-        }
         if ($kind === 'run') {
             $head .= ' · '.$this->hm(intdiv($task->getWorkedSeconds($now), 60));
         }

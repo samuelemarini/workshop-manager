@@ -88,8 +88,11 @@ function initTables() {
    altrimenti (errori di validazione) si ridisegna il contenuto della modale.
    -------------------------------------------------------------------------- */
 const modalEl = () => document.getElementById('appModal');
+// URL da cui è stato caricato il contenuto: i form senza action si inviano lì, non alla pagina sotto
+let modalUrl = null;
 
 function openModal(url, title, size) {
+    modalUrl = url;
     const el = modalEl();
     el.querySelector('.modal-title').textContent = title || '';
     el.querySelector('.modal-dialog').className = 'modal-dialog modal-dialog-centered modal-dialog-scrollable ' + (size || 'modal-lg');
@@ -119,7 +122,8 @@ $(document).on('submit', '#appModal form:not([data-native])', function (e) {
     e.preventDefault();
     const form = this;
     showLoader();
-    fetch(form.action || window.location.href, {
+    // form.action senza attributo vale l'URL della pagina: si usa l'attributo vero
+    fetch(form.getAttribute('action') || modalUrl || window.location.href, {
         method: 'POST',
         body: new FormData(form),
         headers: { 'X-Requested-With': 'XMLHttpRequest' },
@@ -326,7 +330,7 @@ function initAcceptance() {
 
 /* --------------------------------------------------------------------------
    Planning: trascinamento di barre e lavorazioni da pianificare sulla griglia.
-   La colonna d'arrivo dà l'orario (quarti d'ora), la riga il meccanico o la postazione.
+   La colonna d'arrivo dà l'orario (quarti d'ora), la riga il meccanico.
    -------------------------------------------------------------------------- */
 function initPlanningDrag() {
     const grid = document.getElementById('planningGrid');
@@ -360,7 +364,6 @@ function initPlanningDrag() {
             const minute = start + index * slot;
             const data = { task: dragged.dataset.task, start: `${grid.dataset.day} ${String(Math.floor(minute / 60)).padStart(2, '0')}:${String(minute % 60).padStart(2, '0')}`, _token: grid.dataset.token };
             if ('mechanic' in row.dataset) data.mechanic = row.dataset.mechanic;
-            if ('workstation' in row.dataset) data.workstation = row.dataset.workstation;
             const body = new FormData();
             Object.entries(data).forEach(([k, v]) => body.append(k, v));
             showLoader();

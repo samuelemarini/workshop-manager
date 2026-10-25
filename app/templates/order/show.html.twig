@@ -83,7 +83,7 @@
                         </div>
                         <div class="task-meta">
                             <span class="text-nowrap">{{ ui.mav(t.mechanic) }} {{ t.mechanic.name ?? 'Da assegnare' }}</span>
-                            <span class="text-muted text-nowrap">{{ t.workstation.name ?? '' }}{% if t.plannedStart and t.status in ['TODO', 'PAUSED'] %}{{ t.workstation ? ' · ' }}{{ t.plannedStart|when }}{% endif %}</span>
+                            <span class="text-muted text-nowrap">{% if t.plannedStart and t.status in ['TODO', 'PAUSED'] %}{{ t.plannedStart|when }}{% endif %}</span>
                             <span class="task-time{{ t.overEstimate ? ' text-danger' }}" title="effettivo / stimato">{% if t.status == 'RUNNING' %}<span data-timer="{{ t.workedSeconds }}" data-format="hm">{{ t.workedSeconds|duration }}</span>{% else %}{{ t.workedSeconds ? t.workedSeconds|duration : '—' }}{% endif %} <span class="text-muted fw-normal">/ {{ t.estimatedMinutes|minutes }}</span></span>
                             {{ ui.task_status(t) }}
                         </div>

@@ -9,7 +9,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 
 /**
- * Lavorazione di un ordine: assegnata a un meccanico e a una postazione, pianificata a un'ora.
+ * Lavorazione di un ordine: assegnata a un meccanico, pianificata a un'ora.
  * Il tempo effettivo è la somma delle TimeEntry registrate dal tablet.
  */
 #[ORM\Entity(repositoryClass: TaskRepository::class)]
@@ -63,9 +63,6 @@ class Task
 
     #[ORM\ManyToOne]
     private ?Mechanic $mechanic = null;
-
-    #[ORM\ManyToOne]
-    private ?Workstation $workstation = null;
 
     #[ORM\Column(options: ['default' => 60])]
     #[Assert\PositiveOrZero]
@@ -135,8 +132,6 @@ class Task
     public function getMechanic(): ?Mechanic { return $this->mechanic; }
     public function setMechanic(?Mechanic $mechanic): static { $this->mechanic = $mechanic; return $this; }
 
-    public function getWorkstation(): ?Workstation { return $this->workstation; }
-    public function setWorkstation(?Workstation $workstation): static { $this->workstation = $workstation; return $this; }
 
     public function getEstimatedMinutes(): int { return $this->estimatedMinutes; }
     public function setEstimatedMinutes(?int $minutes): static { $this->estimatedMinutes = (int) $minutes; return $this; }

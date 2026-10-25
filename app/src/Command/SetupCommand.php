@@ -6,7 +6,6 @@ use App\Entity\Mechanic;
 use App\Entity\Role;
 use App\Entity\TaskTemplate;
 use App\Entity\User;
-use App\Entity\Workstation;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Attribute\Option;
@@ -14,23 +13,16 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 /**
- * Dati iniziali: ruoli, utente amministratore, postazioni, lavorazioni tipo e i meccanici di oggi.
- * Idempotente, si può rilanciare: postazioni, lavorazioni tipo e meccanici si creano solo se la tabella è vuota.
+ * Dati iniziali: ruoli, utente amministratore, lavorazioni tipo e i meccanici di oggi.
+ * Idempotente, si può rilanciare: lavorazioni tipo e meccanici si creano solo se la tabella è vuota.
  */
-#[AsCommand(name: 'app:setup', description: 'Crea ruoli, amministratore, postazioni, lavorazioni tipo e meccanici di base')]
+#[AsCommand(name: 'app:setup', description: 'Crea ruoli, amministratore, lavorazioni tipo e meccanici di base')]
 class SetupCommand
 {
     private const ROLES = [
         Role::ADMIN => 'Amministratore',
         Role::OFFICE => 'Ufficio',
         Role::TABLET => 'Tablet officina',
-    ];
-
-    private const WORKSTATIONS = [
-        ['Ponte 1', 'Sollevatore 3,5 t'],
-        ['Ponte 2', 'Sollevatore 5 t · furgoni'],
-        ['Ponte 3', 'Diagnosi ed elettronica'],
-        ['Smontagomme', 'Equilibratrice e assetto'],
     ];
 
     // nome, minuti, controlli
@@ -68,13 +60,6 @@ class SetupCommand
             }
         }
         $this->em->flush();
-
-        if ($this->em->getRepository(Workstation::class)->count([]) === 0) {
-            foreach (self::WORKSTATIONS as $i => [$name, $description]) {
-                $this->em->persist((new Workstation())->setName($name)->setDescription($description)->setSort(($i + 1) * 10));
-            }
-            $io->writeln(count(self::WORKSTATIONS).' postazioni create');
-        }
 
         if ($this->em->getRepository(TaskTemplate::class)->count([]) === 0) {
             foreach (self::TEMPLATES as $i => [$name, $minutes, $checklist]) {

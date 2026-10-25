@@ -13,7 +13,7 @@ class Role
     public const ADMIN = 'ROLE_ADMIN';
     // Ufficio / accettazione: ordini di lavoro, planning, clienti, veicoli, ricambi
     public const OFFICE = 'ROLE_OFFICE';
-    // Tablet in officina: solo la postazione operatore (i meccanici si scelgono lì)
+    // Tablet in officina: solo la schermata tablet (i meccanici si scelgono lì)
     public const TABLET = 'ROLE_TABLET';
 
     #[ORM\Id]

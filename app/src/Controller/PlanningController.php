@@ -4,7 +4,6 @@ namespace App\Controller;
 
 use App\Entity\Mechanic;
 use App\Entity\Task;
-use App\Entity\Workstation;
 use App\Form\TaskType;
 use App\Repository\TaskRepository;
 use App\Service\ActivityLogger;
@@ -24,7 +23,6 @@ class PlanningController extends AppController
     public function index(Request $request, DayPlanner $planner, TaskRepository $tasks): Response
     {
         $day = $this->dateParam($request->query->get('day'), 'today');
-        $view = $request->query->get('view') === 'post' ? 'post' : 'mech';
         if (in_array($request->query->get('mode'), ['week', 'month'], true)) {
             return $this->redirectToRoute('planning_calendar', $request->query->all());
         }
@@ -32,8 +30,7 @@ class PlanningController extends AppController
 
         return $this->render('planning/index.html.twig', [
             'day' => $day,
-            'view' => $view,
-            'grid' => $planner->day($day, $view),
+            'grid' => $planner->day($day),
             'backlog' => $tasks->findUnscheduled(),
             'days' => array_map(fn (int $i) => $monday->modify("+$i days"), range(0, 5)),
             'today' => new \DateTimeImmutable('today'),
@@ -75,7 +72,7 @@ class PlanningController extends AppController
         ]);
     }
 
-    /** Modale "Pianifica": meccanico, postazione, orario e durata */
+    /** Modale "Pianifica": meccanico, orario e durata */
     #[Route('/tasks/{id}/plan', name: 'task_plan', requirements: ['id' => '\d+'])]
     public function plan(Request $request, Task $task, EntityManagerInterface $em, ActivityLogger $logger): Response
     {
@@ -89,6 +86,10 @@ class PlanningController extends AppController
             $logger->order($task->getWorkOrder(), 'Pianificata: '.$task->getTitle().$this->planText($task), $this->user());
             $em->flush();
             $this->addFlash('success', 'Lavorazione pianificata');
+            // dalla scheda ordine si torna lì, dal planning al giorno pianificato
+            if (str_contains((string) $request->headers->get('referer'), '/orders/')) {
+                return $this->redirectToRoute('order_show', ['id' => $task->getWorkOrder()->getId()]);
+            }
 
             return $this->redirectToRoute('planning', ['day' => ($task->getPlannedStart() ?? new \DateTime())->format('Y-m-d')]);
         }
@@ -96,7 +97,7 @@ class PlanningController extends AppController
         return $this->render('planning/_plan_form.html.twig', ['form' => $form, 'task' => $task]);
     }
 
-    /** Trascinamento sul planning: nuovo orario e nuova riga (meccanico o postazione) */
+    /** Trascinamento sul planning: nuovo orario e nuovo meccanico */
     #[Route('/planning/move', name: 'planning_move', methods: ['POST'])]
     public function move(Request $request, EntityManagerInterface $em, ActivityLogger $logger): JsonResponse
     {
@@ -108,12 +109,8 @@ class PlanningController extends AppController
         }
         $task->setPlannedStart($start);
         if ($request->request->has('mechanic')) {
-            $id = $request->request->getInt('mechanic');
+            $id = (int) $request->request->get('mechanic');
             $task->setMechanic($id ? $em->find(Mechanic::class, $id) : null);
-        }
-        if ($request->request->has('workstation')) {
-            $id = $request->request->getInt('workstation');
-            $task->setWorkstation($id ? $em->find(Workstation::class, $id) : null);
         }
         $logger->order($task->getWorkOrder(), 'Pianificata: '.$task->getTitle().$this->planText($task), $this->user());
         $em->flush();
@@ -129,9 +126,6 @@ class PlanningController extends AppController
         }
         if ($task->getMechanic()) {
             $parts[] = $task->getMechanic()->getName();
-        }
-        if ($task->getWorkstation()) {
-            $parts[] = $task->getWorkstation()->getName();
         }
 
         return $parts ? ' ('.implode(', ', $parts).')' : '';
