@@ -33,6 +33,10 @@ function initComponents(root) {
     const $root = $(root);
     $root.find('select.selectpicker').selectpicker({ noneSelectedText: '—', liveSearchPlaceholder: 'Cerca...', noneResultsText: 'Nessun risultato per {0}' });
     $root.find('[data-bs-toggle="tooltip"]').each((i, el) => new bootstrap.Tooltip(el));
+    // il calendario si apre cliccando ovunque nel campo, non solo sull'icona
+    $root.find('input[type=date], input[type=datetime-local], input[type=time]').on('click', function () {
+        try { this.showPicker(); } catch (e) { /* browser senza showPicker */ }
+    });
 }
 
 /* --------------------------------------------------------------------------

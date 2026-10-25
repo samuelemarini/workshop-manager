@@ -15,6 +15,20 @@
             <div class="col-sm-7">{{ form_row(form.plannedStart) }}</div>
             <div class="col-sm-5">{{ form_row(form.estimatedMinutes) }}</div>
         </div>
+        {% if others %}
+            <div class="mb-3">
+                <label class="form-label">Pianifica anche, una dopo l'altra</label>
+                <div class="template-checks">
+                    {% for t in others %}
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="chain[]" value="{{ t.id }}" id="chain_{{ t.id }}"{{ chainDefault ? ' checked' }}>
+                            <label class="form-check-label" for="chain_{{ t.id }}">{{ t.title }} · {{ t.estimatedMinutes|minutes }}</label>
+                        </div>
+                    {% endfor %}
+                </div>
+                <div class="form-text">Stesso meccanico: ognuna parte quando finisce la precedente, saltando pausa pranzo e chiusura.</div>
+            </div>
+        {% endif %}
         <div class="form-actions">
             <a class="btn btn-light me-auto" href="{{ path('order_show', {id: o.id}) }}">Apri l'ordine</a>
             <button class="btn btn-primary"><i class="fa fa-check"></i> Salva</button>
