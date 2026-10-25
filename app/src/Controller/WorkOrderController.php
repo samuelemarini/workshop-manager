@@ -124,7 +124,10 @@ class WorkOrderController extends AppController
     {
         $vehicle = $vehicles->findOneByPlate($request->query->get('plate'));
 
-        return new JsonResponse($vehicle ? ['id' => $vehicle->getId(), 'label' => (string) $vehicle, 'owner' => $vehicle->getOwner()?->getId()] : null);
+        // new JsonResponse(null) manderebbe {}, non null
+        return $vehicle
+            ? new JsonResponse(['id' => $vehicle->getId(), 'label' => (string) $vehicle, 'owner' => $vehicle->getOwner()?->getId()])
+            : JsonResponse::fromJsonString('null');
     }
 
     #[Route('/{id}', name: 'order_show', requirements: ['id' => '\d+'])]

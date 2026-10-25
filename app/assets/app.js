@@ -318,7 +318,7 @@ function initAcceptance() {
         fetch(`${form.dataset.lookupUrl}?plate=${encodeURIComponent(plate.value)}`)
             .then((r) => r.json())
             .then((v) => {
-                if (!v) return;
+                if (!v?.id) return;
                 $vehicle.selectpicker('val', String(v.id));
                 if (v.owner && !$customer.val()) $customer.selectpicker('val', String(v.owner));
                 plate.value = '';
