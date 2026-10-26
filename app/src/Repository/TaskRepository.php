@@ -64,7 +64,8 @@ class TaskRepository extends ServiceEntityRepository
     }
 
     /**
-     * Lavorazioni ancora da fare senza un orario: la colonna "Da pianificare".
+     * Lavorazioni ancora da iniziare senza un orario: la colonna "Da pianificare".
+     * Quelle già lavorate (in pausa, completate o riaperte) non compaiono.
      *
      * @return Task[]
      */
@@ -72,10 +73,11 @@ class TaskRepository extends ServiceEntityRepository
     {
         return $this->withOrder()
             ->where('t.plannedStart IS NULL')
-            ->andWhere('t.status IN (:open)')
+            ->andWhere('t.status = :todo')
+            ->andWhere('t.timeEntries IS EMPTY')
             ->andWhere('o.status NOT IN (:closed)')
-            ->setParameter('open', [Task::TODO, Task::PAUSED])
-            ->setParameter('closed', [WorkOrder::DELIVERED, WorkOrder::CANCELLED])
+            ->setParameter('todo', Task::TODO)
+            ->setParameter('closed', [WorkOrder::READY, WorkOrder::DELIVERED, WorkOrder::CANCELLED])
             ->orderBy('o.promisedAt', 'ASC')
             ->getQuery()->getResult();
     }

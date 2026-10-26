@@ -105,7 +105,7 @@
                         <span class="dur">{{ t.estimatedMinutes|minutes }}</span>
                         <div class="grow">
                             <div><a class="code-lg" href="{{ path('order_show', {id: o.id}) }}">{{ o.code }}</a> · <b>{{ t.title }}</b></div>
-                            <div class="mini text-muted">{{ o.vehicle.name }} {{ o.vehicle.plateLabel }} · {{ o.promisedAt ? 'consegna ' ~ o.promisedAt|when : 'consegna da concordare' }}{% if t.status == 'PAUSED' %} · in pausa: {{ t.pauseReason|lower }}{% endif %}</div>
+                            <div class="mini text-muted">{{ o.vehicle.name }} {{ o.vehicle.plateLabel }} · {{ o.promisedAt ? 'consegna ' ~ o.promisedAt|when : 'consegna da concordare' }}</div>
                         </div>
                         {{ ui.mav(t.mechanic) }}
                         <a class="btn btn-light btn-sm" href="#" data-modal="{{ path('task_plan', {id: t.id, day: day|date('Y-m-d')}) }}" data-title="{{ o.code }} · {{ t.title }}">Pianifica</a>
