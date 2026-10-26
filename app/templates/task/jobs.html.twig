@@ -1,0 +1,74 @@
+{% extends 'base.html.twig' %}
+{% import '_macros.html.twig' as ui %}
+
+{% block title %}Lavori in officina{% endblock %}
+
+{% block body %}
+    {% set actions %}
+        <a class="btn btn-light" href="{{ path('planning') }}"><i class="fa fa-calendar-day"></i> Planning</a>
+        <a class="btn btn-primary" href="{{ path('order_new') }}"><i class="fa fa-plus"></i> Nuova accettazione</a>
+    {% endset %}
+    {% set counts = sections|map(s => s.tasks|length ~ ' ' ~ s.label|lower)|join(' · ') %}
+    {{ include('_page_header.html.twig', {icon: 'fa-list-check', title: 'Lavori in officina', subtitle: counts ~ '<span class="hide-mobile"> · avvia, metti in pausa e chiudi le lavorazioni per conto dei meccanici</span>', actions: actions}) }}
+
+    <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap mb-3">
+        <div class="filter-chips" id="jobsFilter" role="group" aria-label="Filtra per meccanico">
+            <button class="active" data-value="">Tutti</button>
+            {% for m in mechanics %}
+                <button data-value="m{{ m.id }}" title="{{ busy[m.id] is defined ? 'Su ' ~ busy[m.id].workOrder.code ~ ' · ' ~ busy[m.id].title : 'Fermo' }} · oggi {{ (worked[m.id] ?? 0)|duration }} h">
+                    {%- if busy[m.id] is defined %}<i class="fa fa-circle text-danger me-1" style="font-size: 0.55em; vertical-align: middle"></i>{% endif %}{{ m.name }}
+                </button>
+            {% endfor %}
+            <button data-value="none">Da assegnare</button>
+        </div>
+        <div class="search-pill"><i class="fa fa-search"></i><input type="search" id="jobsSearch" placeholder="Cerca targa, cliente, ordine, lavorazione..." aria-label="Cerca nei lavori"></div>
+    </div>
+
+    <div class="d-flex flex-column gap-4" id="jobs">
+        {% for status, s in sections %}
+            <section class="table-card mb-0" data-jobs-section>
+                <div class="card-box p-0 mb-0 shadow-none">
+                    <div class="card-title"><span><span class="tdot t-{{ status }} me-2"></span>{{ s.label }}</span><span class="mini text-muted fw-bold" data-jobs-count>{{ s.tasks|length }}</span></div>
+                </div>
+                {% for t in s.tasks %}
+                    {% set o = t.workOrder %}
+                    {% set who = t.openEntry ? t.openEntry.mechanic : t.mechanic %}
+                    <div class="task-row" data-filter="{{ who ? 'm' ~ who.id : 'none' }}"
+                         data-search="{{ (o.code ~ ' ' ~ o.vehicle.plate ~ ' ' ~ o.vehicle.name ~ ' ' ~ o.customer.name ~ ' ' ~ t.title)|lower }}">
+                        <div class="task-main">
+                            <div><a class="code-lg" href="{{ path('order_show', {id: o.id}) }}">{{ o.code }}</a> · <b>{{ t.title }}</b>{% if t.urgent %} <span class="status s-red ms-1">Sicurezza</span>{% endif %}</div>
+                            <div class="mini text-muted">
+                                {{ ui.plate(o.vehicle) }} {{ o.vehicle.name }} · {{ o.customer.name }}
+                                · <span class="{{ o.late ? 'text-danger fw-bold' }}">{{ o.promisedAt ? 'consegna ' ~ o.promisedAt|when : 'consegna da concordare' }}</span>
+                                {%- if t.checklist|length %} · controlli {{ t.checklistDone }}/{{ t.checklist|length }}{% endif %}
+                            </div>
+                            {% if t.notes %}<div class="mini mt-1"><i class="fa fa-comment text-muted"></i> {{ t.notes }}</div>{% endif %}
+                        </div>
+                        <div class="task-meta">
+                            <span class="text-nowrap">{{ ui.mav(who) }} {{ who.name ?? 'Da assegnare' }}</span>
+                            {% if t.status == 'TODO' %}
+                                <span class="text-muted text-nowrap">{{ t.plannedStart ? t.plannedStart|when : 'da pianificare' }}</span>
+                            {% elseif t.status == 'PAUSED' %}
+                                {{ ui.task_status(t) }}
+                            {% endif %}
+                            <span class="task-time{{ t.overEstimate ? ' text-danger' }}" title="effettivo / stimato">{% if t.status == 'RUNNING' %}<span data-timer="{{ t.workedSeconds }}" data-format="hm">{{ t.workedSeconds|duration }}</span>{% else %}{{ t.workedSeconds ? t.workedSeconds|duration : '—' }}{% endif %} <span class="text-muted fw-normal">/ {{ t.estimatedMinutes|minutes }}</span></span>
+                        </div>
+                        <div class="task-actions">
+                            {% if t.status == 'RUNNING' %}
+                                <a class="btn btn-light btn-sm" href="#" data-modal="{{ path('task_pause', {id: t.id}) }}" data-title="Pausa · {{ t.title }}"><i class="fa fa-pause"></i> Pausa</a>
+                            {% else %}
+                                <a class="btn btn-dark btn-sm" href="#" data-modal="{{ path('task_start', {id: t.id}) }}" data-title="{{ t.status == 'PAUSED' ? 'Riprendi' : 'Avvia' }} · {{ t.title }}"><i class="fa fa-play"></i> {{ t.status == 'PAUSED' ? 'Riprendi' : 'Avvia' }}</a>
+                            {% endif %}
+                            {{ ui.post_button(path('task_finish', {id: t.id}), ' Completa', 'fa-check', 'btn-light btn-sm', 'Segnare «' ~ t.title ~ '» come completata?') }}
+                            <a class="btn btn-light btn-icon btn-sm" href="#" data-modal="{{ path('task_work', {id: t.id}) }}" data-title="{{ o.code }} · {{ t.title }}" title="Controlli e note" aria-label="Controlli e note di {{ t.title }}"><i class="fa fa-clipboard-check"></i></a>
+                            {% if t.status != 'RUNNING' %}
+                                <a class="btn btn-light btn-icon btn-sm" href="#" data-modal="{{ path('task_plan', {id: t.id}) }}" data-title="Pianifica · {{ t.title }}" title="Pianifica" aria-label="Pianifica {{ t.title }}"><i class="fa fa-calendar-day"></i></a>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+                <div class="empty-state py-3" data-jobs-empty{% if s.tasks|length %} hidden{% endif %}>Nessuna lavorazione</div>
+            </section>
+        {% endfor %}
+    </div>
+{% endblock %}

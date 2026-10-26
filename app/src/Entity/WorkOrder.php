@@ -175,6 +175,17 @@ class WorkOrder
     public function getKmIn(): ?int { return $this->kmIn; }
     public function setKmIn(?int $km): static { $this->kmIn = $km; return $this; }
 
+    /** Km letti in officina: valgono come km d'ingresso se mancano e aggiornano il veicolo se più alti */
+    public function readKm(int $km): static
+    {
+        $this->kmIn ??= $km;
+        if ($km > (int) $this->vehicle->getKm()) {
+            $this->vehicle->setKm($km);
+        }
+
+        return $this;
+    }
+
     public function getFuelLevel(): ?string { return $this->fuelLevel; }
     public function setFuelLevel(?string $level): static { $this->fuelLevel = $level; return $this; }
 

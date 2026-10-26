@@ -94,6 +94,11 @@
                             {% elseif t.status in ['TODO', 'PAUSED'] and o.open %}
                                 <a class="btn btn-light btn-sm" href="#" data-modal="{{ path('task_plan', {id: t.id}) }}" data-title="Pianifica · {{ t.title }}"><i class="fa fa-calendar-day"></i> Pianifica</a>
                             {% endif %}
+                            {% if t.status == 'RUNNING' %}
+                                <a class="btn btn-light btn-sm" href="#" data-modal="{{ path('task_pause', {id: t.id}) }}" data-title="Pausa · {{ t.title }}"><i class="fa fa-pause"></i> Pausa</a>
+                            {% elseif t.status in ['TODO', 'PAUSED'] and o.open %}
+                                <a class="btn btn-light btn-icon btn-sm" href="#" data-modal="{{ path('task_start', {id: t.id}) }}" data-title="{{ t.status == 'PAUSED' ? 'Riprendi' : 'Avvia' }} · {{ t.title }}" title="{{ t.status == 'PAUSED' ? 'Riprendi' : 'Avvia' }}" aria-label="{{ t.status == 'PAUSED' ? 'Riprendi' : 'Avvia' }} {{ t.title }}"><i class="fa fa-play"></i></a>
+                            {% endif %}
                             {% if t.status in ['TODO', 'PAUSED', 'RUNNING'] %}
                                 {{ ui.post_button(path('task_finish', {id: t.id}), '', 'fa-check', 'btn-light btn-icon btn-sm', 'Segnare «' ~ t.title ~ '» come completata?') }}
                             {% elseif t.status == 'DONE' and o.open %}
@@ -108,7 +113,7 @@
             </section>
 
             <section class="card-box mb-0">
-                <div class="card-title"><span><i class="fa fa-stopwatch"></i> Registro tempi</span><span class="mini text-muted">dal tablet in officina</span></div>
+                <div class="card-title"><span><i class="fa fa-stopwatch"></i> Registro tempi</span><span class="mini text-muted">dal tablet o dall'ufficio</span></div>
                 {% if entries|length %}
                     <ol class="time-log">
                         {% for e in entries %}
@@ -126,7 +131,7 @@
                         {% endfor %}
                     </ol>
                 {% else %}
-                    <div class="empty-state py-3"><i class="fa fa-stopwatch"></i>Ancora nessun tempo: i meccanici avviano le lavorazioni dal tablet</div>
+                    <div class="empty-state py-3"><i class="fa fa-stopwatch"></i>Ancora nessun tempo: le lavorazioni si avviano dal tablet o da Lavori in officina</div>
                 {% endif %}
             </section>
 

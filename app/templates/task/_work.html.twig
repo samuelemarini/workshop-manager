@@ -1,0 +1,39 @@
+{% extends app.request.xmlHttpRequest ? '_modal.html.twig' : '_modal_page.html.twig' %}
+
+{% block modal_title %}{{ task.title }}{% endblock %}
+
+{% block modal_content %}
+    {{ include('task/_task_head.html.twig') }}
+    {% set o = task.workOrder %}
+    {% if task.description %}<p>{{ task.description|nl2br }}</p>{% endif %}
+    {% if o.customerRequest %}<div class="mini text-muted fw-bold mb-1">Cosa chiede il cliente</div><div class="quote-box mb-3">“{{ o.customerRequest }}”</div>{% endif %}
+    <form method="post" action="{{ path('task_work', {id: task.id}) }}">
+        <input type="hidden" name="_token" value="{{ csrf_token('submit') }}">
+        {% if task.checklist|length %}
+            <label class="form-label">Controlli</label>
+            <div class="template-checks mb-3">
+                {% for c in task.checklist %}
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="checks[]" value="{{ loop.index0 }}" id="wc{{ loop.index0 }}"{{ c.done ? ' checked' }}>
+                        <label class="form-check-label" for="wc{{ loop.index0 }}">{{ c.label }}</label>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        <div class="row">
+            <div class="col-sm-8 mb-3">
+                <label class="form-label" for="wNotes">Note del meccanico</label>
+                <textarea class="form-control" id="wNotes" name="notes" rows="3" placeholder="es. pastiglie posteriori al 30%, da rivedere al prossimo tagliando">{{ task.notes }}</textarea>
+            </div>
+            <div class="col-sm-4 mb-3">
+                <label class="form-label" for="wKm">Km letti</label>
+                <input class="form-control" id="wKm" name="km" inputmode="numeric" placeholder="{{ o.kmIn ? o.kmIn|num : (o.vehicle.km ? 'ultimi ' ~ o.vehicle.km|num) }}">
+                <div class="form-text">Aggiornano il veicolo se più alti</div>
+            </div>
+        </div>
+        <div class="form-actions">
+            <a class="btn btn-light me-auto" href="{{ path('order_show', {id: o.id}) }}">Ricambi e foto nell'ordine</a>
+            <button class="btn btn-primary"><i class="fa fa-check"></i> Salva</button>
+        </div>
+    </form>
+{% endblock %}

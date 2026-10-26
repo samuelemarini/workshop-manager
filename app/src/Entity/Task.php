@@ -198,6 +198,16 @@ class Task
         return $this->checklist[$index]['done'];
     }
 
+    /** Spunte dall'ufficio: fatte le voci con questi indici, le altre no */
+    public function markChecks(array $indexes): static
+    {
+        foreach ($this->checklist as $i => $check) {
+            $this->checklist[$i]['done'] = in_array($i, $indexes, true);
+        }
+
+        return $this;
+    }
+
     public function getChecklistDone(): int
     {
         return count(array_filter($this->checklist, fn (array $c) => $c['done']));

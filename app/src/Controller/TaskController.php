@@ -2,9 +2,13 @@
 
 namespace App\Controller;
 
+use App\Entity\Mechanic;
 use App\Entity\Task;
 use App\Entity\WorkOrder;
 use App\Form\TaskType;
+use App\Repository\MechanicRepository;
+use App\Repository\TaskRepository;
+use App\Repository\TimeEntryRepository;
 use App\Service\ActivityLogger;
 use App\Service\Workflow;
 use Doctrine\ORM\EntityManagerInterface;
@@ -14,11 +18,111 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 /**
- * Lavorazioni dall'ufficio: aggiunta, modifica, OK del cliente sui lavori extra, chiusura a mano.
+ * Lavorazioni dall'ufficio: aggiunta, modifica, OK del cliente sui lavori extra, chiusura a mano,
+ * e le stesse azioni del tablet (avvio, pausa, controlli, note) per conto di un meccanico.
  */
 #[IsGranted('ROLE_OFFICE')]
 class TaskController extends AppController
 {
+    #[Route('/lavori', name: 'jobs')]
+    public function jobs(TaskRepository $tasks, MechanicRepository $mechanics, TimeEntryRepository $entries): Response
+    {
+        $list = $tasks->findWorkshop();
+        $today = new \DateTimeImmutable('today');
+        $sections = [];
+        foreach ([Task::RUNNING => 'In corso', Task::PAUSED => 'In pausa', Task::TODO => 'Da iniziare'] as $status => $label) {
+            $sections[$status] = ['label' => $label, 'tasks' => array_values(array_filter($list, fn (Task $t) => $t->getStatus() === $status))];
+        }
+
+        return $this->render('task/jobs.html.twig', [
+            'sections' => $sections,
+            'mechanics' => $mechanics->findActive(),
+            'busy' => $this->busy($entries),
+            'worked' => $entries->secondsByMechanic($today, $today->modify('+1 day')),
+        ]);
+    }
+
+    /** Avvio o ripresa per conto di un meccanico: quello che stava facendo va in pausa */
+    #[Route('/tasks/{id}/start', name: 'task_start', requirements: ['id' => '\d+'])]
+    public function start(Request $request, Task $task, Workflow $workflow, EntityManagerInterface $em, MechanicRepository $mechanics, TimeEntryRepository $entries): Response
+    {
+        if ($request->isMethod('POST')) {
+            $this->checkToken($request);
+            $mechanic = $em->find(Mechanic::class, $request->request->getInt('mechanic'));
+            if (!$mechanic || $mechanic->getCancel()) {
+                $this->addFlash('danger', 'Scegli il meccanico che ci lavora.');
+
+                return $this->back($request, 'jobs');
+            }
+            try {
+                if (!$task->getOpenEntry()) {
+                    $task->setMechanic($mechanic);
+                }
+                $workflow->start($task, $mechanic, $this->user());
+                $em->flush();
+                $this->addFlash('success', $task->getTitle().': in corso con '.$mechanic->getName());
+            } catch (\DomainException $e) {
+                $this->addFlash('danger', $e->getMessage());
+            }
+
+            return $this->back($request, 'jobs');
+        }
+
+        return $this->render('task/_start.html.twig', [
+            'task' => $task,
+            'mechanics' => $mechanics->findActive(),
+            'busy' => $this->busy($entries),
+        ]);
+    }
+
+    #[Route('/tasks/{id}/pause', name: 'task_pause', requirements: ['id' => '\d+'])]
+    public function pause(Request $request, Task $task, Workflow $workflow, EntityManagerInterface $em): Response
+    {
+        if ($request->isMethod('POST')) {
+            $this->checkToken($request);
+            $reason = (string) $request->request->get('reason');
+            $workflow->pause($task, isset(Task::PAUSE_REASONS[$reason]) ? $reason : 'Altro', $this->user());
+            $em->flush();
+            $this->addFlash('success', $task->getTitle().': in pausa');
+
+            return $this->back($request, 'jobs');
+        }
+
+        return $this->render('task/_pause.html.twig', ['task' => $task, 'reasons' => Task::PAUSE_REASONS]);
+    }
+
+    /** Scheda lavoro: controlli spuntati, note per l'ufficio e km letti, come sul tablet */
+    #[Route('/tasks/{id}/work', name: 'task_work', requirements: ['id' => '\d+'])]
+    public function work(Request $request, Task $task, EntityManagerInterface $em): Response
+    {
+        if ($request->isMethod('POST')) {
+            $this->checkToken($request);
+            $task->markChecks(array_map('intval', $request->request->all('checks')));
+            $task->setNotes(trim((string) $request->request->get('notes')) ?: null);
+            $km = (int) preg_replace('/\D/', '', (string) $request->request->get('km'));
+            if ($km > 0) {
+                $task->getWorkOrder()->readKm($km);
+            }
+            $em->flush();
+            $this->addFlash('success', 'Lavorazione salvata');
+
+            return $this->back($request, 'jobs');
+        }
+
+        return $this->render('task/_work.html.twig', ['task' => $task]);
+    }
+
+    /** @return array<int, Task> id meccanico => lavorazione su cui sta lavorando adesso */
+    private function busy(TimeEntryRepository $entries): array
+    {
+        $busy = [];
+        foreach ($entries->findBy(['endedAt' => null]) as $entry) {
+            $busy[$entry->getMechanic()->getId()] = $entry->getTask();
+        }
+
+        return $busy;
+    }
+
     #[Route('/orders/{id}/tasks/new', name: 'task_new', requirements: ['id' => '\d+'])]
     public function new(Request $request, WorkOrder $order, EntityManagerInterface $em, ActivityLogger $logger, Workflow $workflow): Response
     {

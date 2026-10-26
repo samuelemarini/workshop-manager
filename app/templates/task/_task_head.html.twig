@@ -1,0 +1,7 @@
+{# Intestazione delle modali di una lavorazione: ordine, veicolo, cliente #}
+{% import '_macros.html.twig' as ui %}
+{% set o = task.workOrder %}
+<div class="d-flex align-items-center gap-2 flex-wrap mb-3">
+    <a class="code-lg" href="{{ path('order_show', {id: o.id}) }}">{{ o.code }}</a>{{ ui.plate(o.vehicle) }}<span class="text-muted">{{ o.vehicle.name }} · {{ o.customer.name }}</span>
+    <span class="ms-auto">{{ ui.task_status(task) }}</span>
+</div>

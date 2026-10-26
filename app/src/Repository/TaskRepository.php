@@ -83,6 +83,25 @@ class TaskRepository extends ServiceEntityRepository
     }
 
     /**
+     * Lavorazioni aperte degli ordini in officina (da iniziare, in corso, in pausa):
+     * la pagina "Lavori in officina", dove l'ufficio fa quello che fa il tablet.
+     *
+     * @return Task[]
+     */
+    public function findWorkshop(): array
+    {
+        return $this->withOrder()
+            ->where('t.status IN (:open)')
+            ->andWhere('o.status NOT IN (:closed)')
+            ->setParameter('open', [Task::TODO, Task::RUNNING, Task::PAUSED])
+            ->setParameter('closed', [WorkOrder::DELIVERED, WorkOrder::CANCELLED])
+            ->orderBy('t.plannedStart', 'ASC')
+            ->addOrderBy('o.promisedAt', 'ASC')
+            ->addOrderBy('t.sort', 'ASC')
+            ->getQuery()->getResult();
+    }
+
+    /**
      * Le lavorazioni di un meccanico che il tablet mostra oggi: quelle in corso o in pausa,
      * quelle da fare pianificate fino a oggi o senza orario, quelle completate oggi.
      *

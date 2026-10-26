@@ -108,9 +108,13 @@ class PlanningController extends AppController
             }
             $em->flush();
             $this->addFlash('success', $count > 1 ? "$count lavorazioni pianificate una dopo l'altra" : 'Lavorazione pianificata');
-            // dalla scheda ordine si torna lì, dal planning al giorno pianificato
-            if (str_contains((string) $request->headers->get('referer'), '/orders/')) {
+            // dalla scheda ordine o dai lavori in officina si torna lì, dal planning al giorno pianificato
+            $referer = (string) $request->headers->get('referer');
+            if (str_contains($referer, '/orders/')) {
                 return $this->redirectToRoute('order_show', ['id' => $task->getWorkOrder()->getId()]);
+            }
+            if (str_contains($referer, '/lavori')) {
+                return $this->redirectToRoute('jobs');
             }
 
             return $this->redirectToRoute('planning', ['day' => ($task->getPlannedStart() ?? new \DateTime())->format('Y-m-d')]);

@@ -293,11 +293,7 @@ class TabletController extends AppController
         $task->setNotes(trim((string) $request->request->get('notes')) ?: null);
         $km = (int) preg_replace('/\D/', '', (string) $request->request->get('km'));
         if ($km > 0) {
-            $order = $task->getWorkOrder();
-            $order->getKmIn() ?? $order->setKmIn($km);
-            if ($km > (int) $order->getVehicle()->getKm()) {
-                $order->getVehicle()->setKm($km);
-            }
+            $task->getWorkOrder()->readKm($km);
         }
         $this->em->flush();
         $this->addFlash('success', 'Salvato');

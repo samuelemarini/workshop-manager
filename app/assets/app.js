@@ -253,6 +253,7 @@ $(function () {
     initPlanningDrag();
     initWeekDrag();
     initBoard();
+    initJobs();
 
     // i messaggi di successo spariscono da soli
     setTimeout(() => $('.flash-stack .alert-success').fadeOut(400), 5000);
@@ -461,6 +462,33 @@ function initBoard() {
         filter();
     });
     document.getElementById('boardSearch')?.addEventListener('input', (e) => { text = e.target.value.trim().toLowerCase(); filter(); });
+}
+
+/* --------------------------------------------------------------------------
+   Lavori in officina: filtro per meccanico e ricerca, conteggi per sezione
+   -------------------------------------------------------------------------- */
+function initJobs() {
+    const jobs = document.getElementById('jobs');
+    if (!jobs) return;
+    let who = '';
+    let text = '';
+    const filter = () => jobs.querySelectorAll('[data-jobs-section]').forEach((section) => {
+        let visible = 0;
+        section.querySelectorAll('.task-row').forEach((row) => {
+            row.hidden = (who && row.dataset.filter !== who) || (text && !row.dataset.search.includes(text));
+            if (!row.hidden) visible++;
+        });
+        section.querySelector('[data-jobs-count]').textContent = visible;
+        section.querySelector('[data-jobs-empty]').hidden = visible > 0;
+    });
+    document.getElementById('jobsFilter').addEventListener('click', (e) => {
+        const btn = e.target.closest('button');
+        if (!btn) return;
+        document.querySelectorAll('#jobsFilter button').forEach((b) => b.classList.toggle('active', b === btn));
+        who = btn.dataset.value || '';
+        filter();
+    });
+    document.getElementById('jobsSearch').addEventListener('input', (e) => { text = e.target.value.trim().toLowerCase(); filter(); });
 }
 
 /* --------------------------------------------------------------------------
