@@ -85,6 +85,7 @@ class TaskRepository extends ServiceEntityRepository
     /**
      * Lavorazioni aperte degli ordini in officina (da iniziare, in corso, in pausa):
      * la pagina "Lavori in officina", dove l'ufficio fa quello che fa il tablet.
+     * Le auto già pronte non compaiono, anche se segnate pronte con lavorazioni non fatte.
      *
      * @return Task[]
      */
@@ -94,7 +95,7 @@ class TaskRepository extends ServiceEntityRepository
             ->where('t.status IN (:open)')
             ->andWhere('o.status NOT IN (:closed)')
             ->setParameter('open', [Task::TODO, Task::RUNNING, Task::PAUSED])
-            ->setParameter('closed', [WorkOrder::DELIVERED, WorkOrder::CANCELLED])
+            ->setParameter('closed', [WorkOrder::READY, WorkOrder::DELIVERED, WorkOrder::CANCELLED])
             ->orderBy('t.plannedStart', 'ASC')
             ->addOrderBy('o.promisedAt', 'ASC')
             ->addOrderBy('t.sort', 'ASC')
