@@ -42,7 +42,7 @@ class AttachmentController extends AppController
         }
         $storage->delete($attachment);
         $em->flush();
-        $this->addFlash('success', 'Allegato eliminato');
+        $this->addFlash('success', $this->trans('Allegato eliminato'));
 
         return $this->back($request, 'homepage');
     }

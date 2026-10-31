@@ -34,13 +34,18 @@ class SettingsController extends AppController
         $this->checkToken($request);
         foreach (array_keys(SettingRepository::DEFAULTS) as $name) {
             $value = trim((string) $request->request->get($name));
-            $valid = $name === 'labour_rate' ? is_numeric(str_replace(',', '.', $value)) : preg_match('/^\d{1,2}:\d{2}$/', $value);
+            $valid = match ($name) {
+                // Nome dell'officina in testa alla scheda stampata; vuoto = nome del gestionale
+                'workshop_name' => mb_strlen($value) <= 100,
+                'labour_rate' => is_numeric(str_replace(',', '.', $value)),
+                default => preg_match('/^\d{1,2}:\d{2}$/', $value),
+            };
             if ($valid) {
                 $settings->set($name, $value);
             }
         }
         $em->flush();
-        $this->addFlash('success', 'Impostazioni salvate');
+        $this->addFlash('success', $this->trans('Impostazioni salvate'));
 
         return $this->redirectToRoute('settings_index');
     }
@@ -55,7 +60,7 @@ class SettingsController extends AppController
         if ($form->isSubmitted() && $form->isValid()) {
             $em->persist($template);
             $em->flush();
-            $this->addFlash('success', 'Lavorazione tipo salvata');
+            $this->addFlash('success', $this->trans('Lavorazione tipo salvata'));
 
             return $this->redirectToRoute('settings_index');
         }

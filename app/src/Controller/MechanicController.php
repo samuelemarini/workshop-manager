@@ -74,7 +74,7 @@ class MechanicController extends AppController
             }
             $em->persist($mechanic);
             $em->flush();
-            $this->addFlash('success', 'Meccanico salvato');
+            $this->addFlash('success', $this->trans('Meccanico salvato'));
 
             return $this->redirectToRoute('mechanic_index');
         }
@@ -89,7 +89,7 @@ class MechanicController extends AppController
         $this->checkToken($request);
         $mechanic->setCancel(1);
         $em->flush();
-        $this->addFlash('success', $mechanic->getName().' non compare più su planning e tablet');
+        $this->addFlash('success', $this->trans('%mechanic% non compare più su planning e tablet', ['%mechanic%' => $mechanic->getName()]));
 
         return $this->redirectToRoute('mechanic_index');
     }

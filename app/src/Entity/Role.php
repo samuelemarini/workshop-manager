@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use App\Repository\RoleRepository;
+use App\Util\Trans;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -40,7 +41,8 @@ class Role
     public function getCode(): ?string { return $this->code; }
     public function setCode(string $code): static { $this->code = $code; return $this; }
 
-    public function getName(): ?string { return $this->name; }
+    /** Nome tradotto: i ruoli sono fissi (app:setup) e il nome italiano fa da chiave */
+    public function getName(): ?string { return $this->name === null ? null : Trans::label($this->name); }
     public function setName(string $name): static { $this->name = $name; return $this; }
 
     /** @return Collection<int, User> */

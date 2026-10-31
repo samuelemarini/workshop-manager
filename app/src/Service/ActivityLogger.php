@@ -10,6 +10,8 @@ use Doctrine\ORM\EntityManagerInterface;
 
 /**
  * Storico degli ordini di lavoro. Persiste soltanto: il flush è del chiamante.
+ * Il messaggio è uno dei modelli di ActivityLog::MESSAGES (italiano, coi parametri %nome%):
+ * si salva in italiano e si traduce quando si mostra.
  */
 class ActivityLogger
 {
@@ -17,8 +19,10 @@ class ActivityLogger
     {
     }
 
-    public function order(WorkOrder $order, string $message, ?User $user, ?Mechanic $mechanic = null): void
+    /** @param array<string, string|int|null> $params valori dei %parametri% del modello */
+    public function order(WorkOrder $order, string $message, ?User $user, ?Mechanic $mechanic = null, array $params = []): void
     {
-        $this->em->persist(new ActivityLog(ActivityLog::SUBJECT_ORDER, $order->getId(), $message, $user, $mechanic));
+        $text = strtr($message, array_map('strval', $params));
+        $this->em->persist(new ActivityLog(ActivityLog::SUBJECT_ORDER, $order->getId(), $text, $user, $mechanic));
     }
 }

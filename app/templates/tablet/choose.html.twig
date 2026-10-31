@@ -1,25 +1,25 @@
 {% extends 'tablet/base.html.twig' %}
 
-{% block title %}Chi sta lavorando?{% endblock %}
+{% block title %}{{ 'Chi sta lavorando?'|trans }}{% endblock %}
 
 {% block body %}
     <div class="op-login">
         <aside class="op-login-side">
             <div class="d-flex align-items-center gap-3">
                 <span class="op-logo"><i class="fa fa-wrench"></i></span>
-                <div><div class="op-cond" style="font-size: 2rem; letter-spacing: 2px; line-height: 1">OFFICINA</div><div class="op-mut" style="letter-spacing: 1.4px; font-size: 0.75rem">AUTOFFICINA · OFFICINA</div></div>
+                <div><div class="op-cond" style="font-size: 2rem; letter-spacing: 2px; line-height: 1">{{ 'Officina'|trans|upper }}</div><div class="op-mut" style="letter-spacing: 1.4px; font-size: 0.75rem">{{ 'Tablet in officina'|trans|upper }}</div></div>
             </div>
             <div>
                 <div class="op-cond op-bigclock" data-clock="{{ now|date('H:i:s') }}">{{ now|date('G:i') }}</div>
-                <div style="font-size: 1.25rem; font-weight: 600; margin-top: 10px">{{ now|long_date|replace({(now|date('Y')): ''})|capitalize }}</div>
+                <div style="font-size: 1.25rem; font-weight: 600; margin-top: 10px">{%- set today_label = now|date_skeleton('EEEEdMMMM') -%}{# |capitalize abbasserebbe il mese ("october", "oktober") #}{{ today_label|slice(0, 1)|upper ~ today_label|slice(1) }}</div>
             </div>
             <div class="d-flex gap-3 flex-wrap">
-                {% if is_granted('ROLE_OFFICE') %}<a class="op-link" href="{{ path('homepage') }}">Torna all'ufficio</a>{% endif %}
-                <a class="op-link" href="{{ path('app_logout') }}">Scollega il tablet</a>
+                {% if is_granted('ROLE_OFFICE') %}<a class="op-link" href="{{ path('homepage') }}">{{ "Torna all'ufficio"|trans }}</a>{% endif %}
+                <a class="op-link" href="{{ path('app_logout') }}">{{ 'Scollega il tablet'|trans }}</a>
             </div>
         </aside>
         <main class="op-login-main">
-            <h1 class="op-cond op-h1">Chi sta lavorando?</h1>
+            <h1 class="op-cond op-h1">{{ 'Chi sta lavorando?'|trans }}</h1>
             <div class="op-tiles">
                 {% for t in tiles %}
                     {% set m = t.mechanic %}
@@ -31,16 +31,16 @@
                             <span class="op-cond" style="font-size: 2.4rem; text-transform: uppercase; letter-spacing: 1px">{{ m.name }}</span>
                             <span style="font-size: 1.05rem; font-weight: 600">
                                 {%- if t.current -%}
-                                    {{ t.current.status == 'RUNNING' ? 'In corso' : 'In pausa' }}: {{ t.current.title }} · {{ t.current.workOrder.vehicle.name }}
+                                    {{ (t.current.status == 'RUNNING' ? 'In corso: %task%' : 'In pausa: %task%')|trans({'%task%': t.current.title}) }} · {{ t.current.workOrder.vehicle.name }}
                                 {%- else -%}
-                                    Nessun lavoro in corso
+                                    {{ 'Nessun lavoro in corso'|trans }}
                                 {%- endif -%}
                             </span>
-                            <span class="op-mut">{{ t.todo }} {{ t.todo == 1 ? 'lavoro' : 'lavori' }} ancora da chiudere oggi{{ m.hasPin ? ' · con PIN' }}</span>
+                            <span class="op-mut">{{ '%count% lavoro ancora da chiudere oggi|%count% lavori ancora da chiudere oggi'|trans({'%count%': t.todo}) }}{{ m.hasPin ? ' · ' ~ 'con PIN'|trans }}</span>
                         </button>
                     </form>
                 {% else %}
-                    <div class="op-mut">Nessun meccanico attivo: aggiungili dall'ufficio.</div>
+                    <div class="op-mut">{{ "Nessun meccanico attivo: aggiungili dall'ufficio."|trans }}</div>
                 {% endfor %}
             </div>
         </main>
@@ -48,11 +48,11 @@
 
     <div class="op-sheet-bg" id="pinSheet" hidden>
         <div class="op-sheet op-pin" role="dialog" aria-label="PIN">
-            <div class="op-cond" style="font-size: 2rem; text-transform: uppercase">Il tuo PIN</div>
+            <div class="op-cond" style="font-size: 2rem; text-transform: uppercase">{{ 'Il tuo PIN'|trans }}</div>
             <div class="op-pin-dots" aria-live="polite"><i></i><i></i><i></i><i></i></div>
             <div class="op-pin-pad">
                 {% for n in [1, 2, 3, 4, 5, 6, 7, 8, 9] %}<button type="button" data-digit="{{ n }}">{{ n }}</button>{% endfor %}
-                <button type="button" data-pin-cancel>Annulla</button><button type="button" data-digit="0">0</button><button type="button" data-pin-back aria-label="Cancella"><i class="fa fa-delete-left"></i></button>
+                <button type="button" data-pin-cancel>{{ 'Annulla'|trans }}</button><button type="button" data-digit="0">0</button><button type="button" data-pin-back aria-label="{{ 'Cancella'|trans }}"><i class="fa fa-delete-left"></i></button>
             </div>
         </div>
     </div>

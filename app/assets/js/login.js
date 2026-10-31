@@ -1,4 +1,5 @@
 import '../styles/login.scss';
+import { t } from './i18n.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     const toggle = document.getElementById('togglePassword');
@@ -12,6 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelector('.login-form')?.addEventListener('submit', (e) => {
         const btn = e.target.querySelector('button[type=submit]');
         btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Accesso...';
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> ';
+        btn.append(t('Accesso...'));
     });
 });

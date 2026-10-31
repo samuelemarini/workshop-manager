@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Avvio di Officina: migration, dati di base (ruoli, postazioni, lavorazioni tipo) e primo admin.
+# Avvio del gestionale: migration, dati di base (ruoli, postazioni, lavorazioni tipo) e primo admin.
 #
 # L'entrypoint webdevops lo esegue da root a ogni avvio: fa qualcosa solo dove RUN_MIGRATIONS=1.
 # Niente "exit" e niente "set -e": lo script puo' essere incluso con "source" dall'entrypoint.

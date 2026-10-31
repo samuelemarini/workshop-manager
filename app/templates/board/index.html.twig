@@ -1,27 +1,27 @@
 {% extends 'base.html.twig' %}
 {% import '_macros.html.twig' as ui %}
 
-{% block title %}Bacheca lavori{% endblock %}
+{% block title %}{{ 'Bacheca lavori'|trans }}{% endblock %}
 
 {% block body %}
     {% set actions %}
-        <a class="btn btn-light" href="{{ path('order_index') }}"><i class="fa fa-list"></i> Vista elenco</a>
-        <a class="btn btn-primary" href="{{ path('order_new') }}"><i class="fa fa-plus"></i> Nuova accettazione</a>
+        <a class="btn btn-light" href="{{ path('order_index') }}"><i class="fa fa-list"></i> {{ 'Vista elenco'|trans }}</a>
+        <a class="btn btn-primary" href="{{ path('order_new') }}"><i class="fa fa-plus"></i> {{ 'Nuova accettazione'|trans }}</a>
     {% endset %}
-    {{ include('_page_header.html.twig', {icon: 'fa-table-columns', title: 'Bacheca lavori', subtitle: count ~ ' veicoli in officina<span class="hide-mobile"> · trascina una scheda per cambiarne lo stato</span>', actions: actions}) }}
+    {{ include('_page_header.html.twig', {icon: 'fa-table-columns', title: 'Bacheca lavori'|trans, subtitle: '%count% veicolo in officina|%count% veicoli in officina'|trans({'%count%': count})|e ~ '<span class="hide-mobile"> · ' ~ 'trascina una scheda per cambiarne lo stato'|trans|e ~ '</span>', actions: actions}) }}
 
     <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap mb-3">
-        <div class="filter-chips" id="boardFilter" role="group" aria-label="Filtra per meccanico">
-            <button class="active" data-value="">Tutti</button>
+        <div class="filter-chips" id="boardFilter" role="group" aria-label="{{ 'Filtra per meccanico'|trans }}">
+            <button class="active" data-value="">{{ 'Tutti'|trans }}</button>
             {% for m in mechanics %}<button data-value="m{{ m.id }}">{{ m.name }}</button>{% endfor %}
-            <button data-value="none">Da assegnare</button>
+            <button data-value="none">{{ 'Da assegnare'|trans }}</button>
         </div>
-        <div class="search-pill"><i class="fa fa-search"></i><input type="search" id="boardSearch" placeholder="Cerca targa, cliente, ordine..." aria-label="Cerca nella bacheca"></div>
+        <div class="search-pill"><i class="fa fa-search"></i><input type="search" id="boardSearch" placeholder="{{ 'Cerca targa, cliente, ordine...'|trans }}" aria-label="{{ 'Cerca nella bacheca'|trans }}"></div>
     </div>
 
-    <nav class="board-jump only-mobile-block" aria-label="Vai alla colonna">
+    <nav class="board-jump only-mobile-block" aria-label="{{ 'Vai alla colonna'|trans }}">
         {% set short = {ACCEPTED: 'Da iniziare', IN_PROGRESS: 'In lavoro', WAITING: 'In attesa', READY: 'Pronte', DELIVERED: 'Consegnate'} %}
-        {% for status, col in columns %}<a href="#col-{{ status }}"><i class="kdot" style="background: {{ col.color }}"></i>{{ short[status] }} <b>{{ col.orders|length }}</b></a>{% endfor %}
+        {% for status, col in columns %}<a href="#col-{{ status }}"><i class="kdot" style="background: {{ col.color }}"></i>{{ short[status]|trans }} <b>{{ col.orders|length }}</b></a>{% endfor %}
     </nav>
 
     <div class="board-wrap">
@@ -40,30 +40,30 @@
                             <div class="kcar">{{ o.vehicle.name }}</div>
                             <div class="mini text-muted">{{ o.customer.name }}</div>
                             {% if o.status == 'IN_PROGRESS' and o.runningTask %}
-                                <span class="flag f-red">{{ o.runningTask.mechanic.name ?? '' }} · {{ o.runningTask.workedSeconds|duration }} su {{ o.runningTask.estimatedMinutes|minutes }}</span>
+                                <span class="flag f-red">{{ o.runningTask.mechanic.name ?? '' }} · {{ '%worked% su %estimated%'|trans({'%worked%': o.runningTask.workedSeconds|duration, '%estimated%': o.runningTask.estimatedMinutes|minutes}) }}</span>
                             {% elseif o.status == 'WAITING' and o.waitingReason %}
                                 <span class="flag f-amber">{{ o.waitingReason }}</span>
                             {% elseif o.status == 'READY' %}
-                                <span class="flag f-green">{{ o.customerNotifiedAt ? 'Cliente avvisato ' ~ o.customerNotifiedAt|when : 'Da avvisare il cliente' }}</span>
+                                <span class="flag f-green">{{ o.customerNotifiedAt ? 'Cliente avvisato %when%'|trans({'%when%': o.customerNotifiedAt|when}) : 'Da avvisare il cliente'|trans }}</span>
                             {% elseif o.hasUnassignedTasks and o.status != 'DELIVERED' %}
-                                <span class="flag f-red">Senza meccanico</span>
+                                <span class="flag f-red">{{ 'Senza meccanico'|trans }}</span>
                             {% endif %}
-                            {% if o.proposedTasks|length %}<span class="flag f-amber">{{ o.proposedTasks|length }} da autorizzare</span>{% endif %}
+                            {% if o.proposedTasks|length %}<span class="flag f-amber">{{ '%count% da autorizzare'|trans({'%count%': o.proposedTasks|length}) }}</span>{% endif %}
                             <ul class="ktasks">
                                 {% for t in o.tasks|filter(t => t.status != 'REJECTED') %}
                                     <li><span class="tdot t-{{ t.status }}" title="{{ t.statusLabel }}"></span><span>{{ t.title }}</span>{{ ui.mav(t.mechanic) }}</li>
                                 {% else %}
-                                    <li class="text-muted">Nessuna lavorazione</li>
+                                    <li class="text-muted">{{ 'Nessuna lavorazione'|trans }}</li>
                                 {% endfor %}
                             </ul>
                             <div class="progress-thin dark"><div style="width: {{ o.progressPct }}%"></div></div>
                             <div class="kfoot">
-                                <span class="{{ o.late ? 'text-danger' }}">{{ o.status == 'DELIVERED' ? 'Consegnata ' ~ o.deliveredAt|when(false) : (o.promisedAt ? 'Consegna ' ~ o.promisedAt|when : 'Consegna da concordare') }}</span>
+                                <span class="{{ o.late ? 'text-danger' }}">{{ o.status == 'DELIVERED' ? 'Consegnata %when%'|trans({'%when%': o.deliveredAt|when(false)}) : (o.promisedAt ? 'Consegna %when%'|trans({'%when%': o.promisedAt|when}) : 'Consegna da concordare'|trans) }}</span>
                                 <span class="text-muted">{{ o.doneCount }}/{{ o.activeTasks|length }}</span>
                             </div>
                         </a>
                     {% endfor %}
-                    <div class="kempty"{% if col.orders|length %} hidden{% endif %}>Nessun veicolo</div>
+                    <div class="kempty"{% if col.orders|length %} hidden{% endif %}>{{ 'Nessun veicolo'|trans }}</div>
                 </section>
             {% endfor %}
         </div>
@@ -73,17 +73,17 @@
     <div class="modal fade" id="waitModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <form class="modal-content" data-native>
-                <div class="modal-header"><h5 class="modal-title">Perché è ferma?</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Chiudi"></button></div>
+                <div class="modal-header"><h5 class="modal-title">{{ 'Perché è ferma?'|trans }}</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Chiudi'|trans }}"></button></div>
                 <div class="modal-body">
                     <div class="choice-pills mb-3">
                         {% for r in ['Attesa ricambi', 'Attesa OK del cliente', 'Il cliente deve portare/ritirare', 'Lavorazione esterna'] %}
-                            <div class="form-check"><input class="form-check-input" type="radio" name="reasonChoice" id="wr{{ loop.index }}" value="{{ r }}"{{ loop.first ? ' checked' }}><label class="form-check-label" for="wr{{ loop.index }}">{{ r }}</label></div>
+                            <div class="form-check"><input class="form-check-input" type="radio" name="reasonChoice" id="wr{{ loop.index }}" value="{{ r }}"{{ loop.first ? ' checked' }}><label class="form-check-label" for="wr{{ loop.index }}">{{ r|trans }}</label></div>
                         {% endfor %}
                     </div>
-                    <label class="form-label" for="waitNote">Dettagli (facoltativo)</label>
-                    <input class="form-control" id="waitNote" placeholder="es. volano in arrivo lunedì">
+                    <label class="form-label" for="waitNote">{{ 'Dettagli (facoltativo)'|trans }}</label>
+                    <input class="form-control" id="waitNote" placeholder="{{ 'es. volano in arrivo lunedì'|trans }}">
                 </div>
-                <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Annulla</button><button class="btn btn-primary">Sposta in attesa</button></div>
+                <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">{{ 'Annulla'|trans }}</button><button class="btn btn-primary">{{ 'Sposta in attesa'|trans }}</button></div>
             </form>
         </div>
     </div>

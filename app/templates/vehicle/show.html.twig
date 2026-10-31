@@ -6,40 +6,40 @@
 {% block body %}
     {% set v = vehicle %}
     {% set actions %}
-        <a class="btn btn-light" href="{{ path('vehicle_edit', {id: v.id}) }}"><i class="fa fa-pen"></i> Modifica</a>
-        <a class="btn btn-primary" href="{{ path('order_new', {vehicle: v.id}) }}"><i class="fa fa-plus"></i> Nuova accettazione</a>
+        <a class="btn btn-light" href="{{ path('vehicle_edit', {id: v.id}) }}"><i class="fa fa-pen"></i> {{ 'Modifica'|trans }}</a>
+        <a class="btn btn-primary" href="{{ path('order_new', {vehicle: v.id}) }}"><i class="fa fa-plus"></i> {{ 'Nuova accettazione'|trans }}</a>
     {% endset %}
-    {{ include('_page_header.html.twig', {back: path('vehicle_index'), title: v.name ~ (v.version ? ' ' ~ v.version), subtitle: v.owner ? 'di ' ~ v.owner.name|e : 'proprietario non indicato', actions: actions}) }}
+    {{ include('_page_header.html.twig', {back: path('vehicle_index'), title: v.name ~ (v.version ? ' ' ~ v.version), subtitle: v.owner ? 'di %name%'|trans({'%name%': v.owner.name})|e : 'proprietario non indicato'|trans|e, actions: actions}) }}
 
     <div class="row g-4">
         <div class="col-xl-4">
             <section class="card-box">
                 <div class="mb-3">{{ ui.plate(v, 'xl') }}</div>
                 <dl class="kv">
-                    <dt>Alimentazione</dt><dd>{{ v.fuel ?? '—' }}</dd>
-                    <dt>Anno</dt><dd>{{ v.year ?? '—' }}</dd>
-                    <dt>Telaio</dt><dd>{{ v.vin ?? '—' }}</dd>
-                    <dt>Ultimi km</dt><dd>{{ v.km ? v.km|num ~ ' km' : '—' }}</dd>
-                    <dt>Revisione</dt><dd class="{{ v.revisionDue and v.revisionDue < date('+30 days') ? 'text-danger' }}">{{ v.revisionDue ? 'scade ' ~ v.revisionDue|date('d/m/Y') : '—' }}</dd>
-                    <dt>Proprietario</dt><dd>{% if v.owner %}<a href="{{ path('customer_edit', {id: v.owner.id}) }}">{{ v.owner.name }}</a>{% if v.owner.phone %}<br><a href="tel:{{ v.owner.phone|replace({' ': ''}) }}">{{ v.owner.phone }}</a>{% endif %}{% else %}—{% endif %}</dd>
+                    <dt>{{ 'Alimentazione'|trans }}</dt><dd>{{ v.fuel ? v.fuel|trans : '—' }}</dd>
+                    <dt>{{ 'Anno'|trans }}</dt><dd>{{ v.year ?? '—' }}</dd>
+                    <dt>{{ 'Telaio'|trans }}</dt><dd>{{ v.vin ?? '—' }}</dd>
+                    <dt>{{ 'Ultimi km'|trans }}</dt><dd>{{ v.km ? v.km|num ~ ' km' : '—' }}</dd>
+                    <dt>{{ 'Revisione'|trans }}</dt><dd class="{{ v.revisionDue and v.revisionDue < date('+30 days') ? 'text-danger' }}">{{ v.revisionDue ? 'scade %date%'|trans({'%date%': v.revisionDue|date('d/m/Y')}) : '—' }}</dd>
+                    <dt>{{ 'Proprietario'|trans }}</dt><dd>{% if v.owner %}<a href="{{ path('customer_edit', {id: v.owner.id}) }}">{{ v.owner.name }}</a>{% if v.owner.phone %}<br><a href="tel:{{ v.owner.phone|replace({' ': ''}) }}">{{ v.owner.phone }}</a>{% endif %}{% else %}—{% endif %}</dd>
                 </dl>
                 {% if v.notes %}<div class="note-box mt-3">{{ v.notes|nl2br }}</div>{% endif %}
             </section>
         </div>
         <div class="col-xl-8">
             <section class="card-box">
-                <div class="card-title"><span><i class="fa fa-clock-rotate-left"></i> Storico interventi</span></div>
+                <div class="card-title"><span><i class="fa fa-clock-rotate-left"></i> {{ 'Storico interventi'|trans }}</span></div>
                 {% for o in v.workOrders %}
                     <a class="list-row text-body align-items-start" href="{{ path('order_show', {id: o.id}) }}">
                         <span class="hour-chip" style="flex-basis: 92px">{{ o.acceptedAt|date('d/m/y') }}</span>
                         <div class="grow">
-                            <div class="fw-bold">{{ o.code }} · {{ o.activeTasks|map(t => t.title)|join(', ')|default('nessuna lavorazione') }}</div>
-                            <div class="mini text-muted">{{ o.kmIn ? o.kmIn|num ~ ' km · ' }}{{ o.workedSeconds|duration }} h di lavoro{{ o.parts|length ? ' · ' ~ o.parts|map(p => p.description)|join(', ') }}</div>
+                            <div class="fw-bold">{{ o.code }} · {{ o.activeTasks|map(t => t.title)|join(', ')|default('nessuna lavorazione'|trans) }}</div>
+                            <div class="mini text-muted">{{ o.kmIn ? o.kmIn|num ~ ' km · ' }}{{ '%hours% h di lavoro'|trans({'%hours%': o.workedSeconds|duration}) }}{{ o.parts|length ? ' · ' ~ o.parts|map(p => p.description)|join(', ') }}</div>
                         </div>
                         {{ ui.order_status(o) }}
                     </a>
                 {% else %}
-                    <div class="empty-state"><i class="fa fa-car-side"></i>Nessun intervento registrato</div>
+                    <div class="empty-state"><i class="fa fa-car-side"></i>{{ 'Nessun intervento registrato'|trans }}</div>
                 {% endfor %}
             </section>
         </div>

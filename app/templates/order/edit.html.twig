@@ -1,9 +1,9 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Modifica {{ order.code }}{% endblock %}
+{% block title %}{{ 'Modifica %code%'|trans({'%code%': order.code}) }}{% endblock %}
 
 {% block body %}
-    {{ include('_page_header.html.twig', {back: path('order_show', {id: order.id}), title: 'Modifica ' ~ order.code, subtitle: order.vehicle ~ ' · ' ~ order.customer.name}) }}
+    {{ include('_page_header.html.twig', {back: path('order_show', {id: order.id}), title: 'Modifica %code%'|trans({'%code%': order.code}), subtitle: order.vehicle ~ ' · ' ~ order.customer.name}) }}
 
     <div class="card-box" style="max-width: 1100px">
         {{ form_start(form) }}
@@ -20,8 +20,8 @@
                 <div class="col-12">{{ form_row(form.internalNotes) }}</div>
             </div>
             <div class="form-actions">
-                <a class="btn btn-light" href="{{ path('order_show', {id: order.id}) }}">Annulla</a>
-                <button class="btn btn-primary"><i class="fa fa-check"></i> Salva</button>
+                <a class="btn btn-light" href="{{ path('order_show', {id: order.id}) }}">{{ 'Annulla'|trans }}</a>
+                <button class="btn btn-primary"><i class="fa fa-check"></i> {{ 'Salva'|trans }}</button>
             </div>
         {{ form_end(form) }}
     </div>

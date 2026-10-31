@@ -91,7 +91,7 @@ class PlanningController extends AppController
         $form = $this->createForm(TaskType::class, $task, ['plan_only' => true]);
         $form->handleRequest($request);
         if ($form->isSubmitted() && $form->isValid()) {
-            $logger->order($task->getWorkOrder(), 'Pianificata: '.$task->getTitle().$this->planText($task), $this->user());
+            $logger->order($task->getWorkOrder(), 'Pianificata: %task%', $this->user(), params: ['%task%' => $task->getTitle().$this->planText($task)]);
             $count = 1;
             if ($task->getPlannedStart()) {
                 $ids = array_map('intval', $request->request->all('chain'));
@@ -101,13 +101,13 @@ class PlanningController extends AppController
                         continue;
                     }
                     $next->setMechanic($task->getMechanic())->setPlannedStart($this->after($previous, $settings));
-                    $logger->order($task->getWorkOrder(), 'Pianificata: '.$next->getTitle().$this->planText($next), $this->user());
+                    $logger->order($task->getWorkOrder(), 'Pianificata: %task%', $this->user(), params: ['%task%' => $next->getTitle().$this->planText($next)]);
                     $previous = $next;
                     $count++;
                 }
             }
             $em->flush();
-            $this->addFlash('success', $count > 1 ? "$count lavorazioni pianificate una dopo l'altra" : 'Lavorazione pianificata');
+            $this->addFlash('success', $this->trans('Lavorazione pianificata|%count% lavorazioni pianificate una dopo l\'altra', ['%count%' => $count]));
             // dalla scheda ordine o dai lavori in officina si torna lì, dal planning al giorno pianificato
             $referer = (string) $request->headers->get('referer');
             if (str_contains($referer, '/orders/')) {
@@ -151,14 +151,14 @@ class PlanningController extends AppController
         $task = $em->find(Task::class, $request->request->getInt('task'));
         $start = \DateTime::createFromFormat('Y-m-d H:i', (string) $request->request->get('start'));
         if (!$task || !$start || !in_array($task->getStatus(), [Task::TODO, Task::PAUSED], true)) {
-            return new JsonResponse(['error' => 'Questa lavorazione non si può spostare.'], 400);
+            return new JsonResponse(['error' => $this->trans('Questa lavorazione non si può spostare.')], 400);
         }
         $task->setPlannedStart($start);
         if ($request->request->has('mechanic')) {
             $id = (int) $request->request->get('mechanic');
             $task->setMechanic($id ? $em->find(Mechanic::class, $id) : null);
         }
-        $logger->order($task->getWorkOrder(), 'Pianificata: '.$task->getTitle().$this->planText($task), $this->user());
+        $logger->order($task->getWorkOrder(), 'Pianificata: %task%', $this->user(), params: ['%task%' => $task->getTitle().$this->planText($task)]);
         $em->flush();
 
         return new JsonResponse(['ok' => true]);

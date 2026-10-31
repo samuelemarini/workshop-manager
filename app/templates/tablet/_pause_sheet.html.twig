@@ -1,14 +1,14 @@
 {# Motivo della pausa: ogni pulsante invia il form con il suo motivo #}
 <div class="op-sheet-bg" id="pauseSheet" hidden>
-    <form class="op-sheet" method="post" action="{{ path('tablet_pause', {id: task.id}) }}" role="dialog" aria-label="Motivo della pausa">
+    <form class="op-sheet" method="post" action="{{ path('tablet_pause', {id: task.id}) }}" role="dialog" aria-label="{{ 'Motivo della pausa'|trans }}">
         <input type="hidden" name="_token" value="{{ csrf_token('submit') }}">
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <div class="op-cond op-sheet-title">Perché ti fermi?</div>
-            <button type="button" class="op-gbtn" data-sheet-close>Annulla</button>
+            <div class="op-cond op-sheet-title">{{ 'Perché ti fermi?'|trans }}</div>
+            <button type="button" class="op-gbtn" data-sheet-close>{{ 'Annulla'|trans }}</button>
         </div>
         <div class="op-reasons">
             {% for reason, icon in constant('App\\Entity\\Task::PAUSE_REASONS') %}
-                <button class="op-reason" name="reason" value="{{ reason }}"><span class="op-reason-icon"><i class="fa {{ icon }}"></i></span>{{ reason }}</button>
+                <button class="op-reason" name="reason" value="{{ reason }}"><span class="op-reason-icon"><i class="fa {{ icon }}"></i></span>{{ reason|trans }}</button>
             {% endfor %}
         </div>
     </form>

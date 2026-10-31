@@ -8,7 +8,7 @@
     {%- if mechanic -%}
         <span class="mav mc-{{ mechanic.color }}{{ size ? ' mav-' ~ size }}" title="{{ mechanic.fullName }}">{{ mechanic.initials }}</span>
     {%- else -%}
-        <span class="mav mc-none{{ size ? ' mav-' ~ size }}" title="Da assegnare">?</span>
+        <span class="mav mc-none{{ size ? ' mav-' ~ size }}" title="{{ 'Da assegnare'|trans }}">?</span>
     {%- endif -%}
 {% endmacro %}
 
@@ -43,22 +43,22 @@
                         <div class="meta">{{ (a.size / 1024)|round }} KB · {{ a.uploadedAt|date('d/m/Y') }}{% if a.authorName %} · {{ a.authorName }}{% endif %}</div>
                     </div>
                     {% if a.uploadedBy == app.user or is_granted('ROLE_ADMIN') %}
-                        <form method="post" action="{{ path('attachment_delete', {id: a.id}) }}" data-confirm="Eliminare il documento {{ a.originalName }}?">
+                        <form method="post" action="{{ path('attachment_delete', {id: a.id}) }}" data-confirm="{{ 'Eliminare il documento %name%?'|trans({'%name%': a.originalName}) }}">
                             <input type="hidden" name="_token" value="{{ csrf_token('submit') }}">
-                            <button class="btn btn-light btn-icon btn-sm" title="Elimina" aria-label="Elimina {{ a.originalName }}"><i class="fa fa-trash"></i></button>
+                            <button class="btn btn-light btn-icon btn-sm" title="{{ 'Elimina'|trans }}" aria-label="{{ 'Elimina %name%'|trans({'%name%': a.originalName}) }}"><i class="fa fa-trash"></i></button>
                         </form>
                     {% endif %}
                 </div>
             {% endfor %}
         </div>
     {% else %}
-        <div class="empty-state py-3"><i class="fa fa-paperclip"></i>Nessun documento allegato</div>
+        <div class="empty-state py-3"><i class="fa fa-paperclip"></i>{{ 'Nessun documento allegato'|trans }}</div>
     {% endif %}
     {% if can_upload %}
         <form class="upload-zone" method="post" action="{{ upload_url }}" enctype="multipart/form-data" data-loader>
             <input type="hidden" name="_token" value="{{ csrf_token('submit') }}">
-            <input class="form-control form-control-sm" style="max-width: 420px" type="file" name="files[]" multiple required aria-label="Scegli i file">
-            <button class="btn btn-light btn-sm"><i class="fa fa-upload"></i> Carica</button>
+            <input class="form-control form-control-sm" style="max-width: 420px" type="file" name="files[]" multiple required aria-label="{{ 'Scegli i file'|trans }}">
+            <button class="btn btn-light btn-sm"><i class="fa fa-upload"></i> {{ 'Carica'|trans }}</button>
         </form>
     {% endif %}
 {% endmacro %}
@@ -83,6 +83,6 @@
             {% endfor %}
         </ul>
     {% else %}
-        <div class="empty-state py-2">Nessuna attività</div>
+        <div class="empty-state py-2">{{ 'Nessuna attività'|trans }}</div>
     {% endif %}
 {% endmacro %}

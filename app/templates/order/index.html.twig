@@ -1,36 +1,36 @@
 {% extends 'base.html.twig' %}
 {% import '_macros.html.twig' as ui %}
 
-{% block title %}Ordini di lavoro{% endblock %}
+{% block title %}{{ 'Ordini di lavoro'|trans }}{% endblock %}
 
 {% block body %}
     {% set actions %}
-        <a class="btn btn-light" href="{{ path('board') }}"><i class="fa fa-table-columns"></i> Bacheca</a>
-        <a class="btn btn-primary" href="{{ path('order_new') }}"><i class="fa fa-plus"></i> Nuova accettazione</a>
+        <a class="btn btn-light" href="{{ path('board') }}"><i class="fa fa-table-columns"></i> {{ 'Bacheca'|trans }}</a>
+        <a class="btn btn-primary" href="{{ path('order_new') }}"><i class="fa fa-plus"></i> {{ 'Nuova accettazione'|trans }}</a>
     {% endset %}
-    {{ include('_page_header.html.twig', {icon: 'fa-clipboard-list', title: 'Ordini di lavoro', subtitle: 'Tutti gli ordini, anche consegnati: cerca per targa, cliente o lavorazione', actions: actions}) }}
+    {{ include('_page_header.html.twig', {icon: 'fa-clipboard-list', title: 'Ordini di lavoro'|trans, subtitle: 'Tutti gli ordini, anche consegnati: cerca per targa, cliente o lavorazione'|trans, actions: actions}) }}
 
     <div class="table-card">
         <div class="table-toolbar">
             <div class="filter-chips" data-table-filter="#orders">
-                <button class="active" data-value="">Tutti <span class="count">{{ orders|length }}</span></button>
+                <button class="active" data-value="">{{ 'Tutti'|trans }} <span class="count">{{ orders|length }}</span></button>
                 {% for key, label in constant('App\\Entity\\WorkOrder::STATUSES') %}
-                    {% if counts[key] is defined %}<button data-value="{{ key }}">{{ label }} <span class="count">{{ counts[key] }}</span></button>{% endif %}
+                    {% if counts[key] is defined %}<button data-value="{{ key }}">{{ label|trans }} <span class="count">{{ counts[key] }}</span></button>{% endif %}
                 {% endfor %}
             </div>
-            <div class="search-pill"><i class="fa fa-search"></i><input type="search" placeholder="Cerca targa, cliente, lavoro..." data-table-search="#orders" aria-label="Cerca ordine"></div>
+            <div class="search-pill"><i class="fa fa-search"></i><input type="search" placeholder="{{ 'Cerca targa, cliente, lavoro...'|trans }}" data-table-search="#orders" aria-label="{{ 'Cerca ordine'|trans }}"></div>
         </div>
         <table class="app-table cards-mobile" id="orders" data-datatable data-order='[[0,"desc"]]'>
-            <thead><tr><th>Ordine</th><th>Ingresso</th><th>Veicolo</th><th>Cliente</th><th>Lavorazioni</th><th>Consegna</th><th>Stato</th></tr></thead>
+            <thead><tr><th>{{ 'Ordine'|trans }}</th><th>{{ 'Ingresso'|trans }}</th><th>{{ 'Veicolo'|trans }}</th><th>{{ 'Cliente'|trans }}</th><th>{{ 'Lavorazioni'|trans }}</th><th>{{ 'Consegna'|trans }}</th><th>{{ 'Stato'|trans }}</th></tr></thead>
             <tbody>
                 {% for o in orders %}
                     <tr data-href="{{ path('order_show', {id: o.id}) }}" data-filter="{{ o.status }}">
                         <td class="cell-head" data-order="{{ o.year }}{{ '%05d'|format(o.number) }}"><span class="code-lg">{{ o.code }}</span><span class="mini text-muted"> /{{ o.year }}</span> <span class="only-mobile">{{ ui.order_status(o) }}</span></td>
-                        <td data-label="Ingresso" data-order="{{ o.acceptedAt|date('YmdHi') }}" class="text-nowrap">{{ o.acceptedAt|date('d/m/Y') }}</td>
-                        <td data-label="Veicolo" data-search="{{ o.vehicle.plate }} {{ o.vehicle.plateLabel }}">{{ ui.plate(o.vehicle) }} <span class="mini text-muted">{{ o.vehicle.name }}</span></td>
-                        <td data-label="Cliente">{{ o.customer.name }}</td>
-                        <td data-label="Lavorazioni" class="small">{{ o.activeTasks|map(t => t.title)|join(', ') }}</td>
-                        <td data-label="Consegna" data-order="{{ o.promisedAt ? o.promisedAt|date('YmdHi') }}" class="text-nowrap">{{ o.status == 'DELIVERED' and o.deliveredAt ? o.deliveredAt|date('d/m/Y') : (o.promisedAt ? o.promisedAt|date('d/m/Y H:i') : '—') }}</td>
+                        <td data-label="{{ 'Ingresso'|trans }}" data-order="{{ o.acceptedAt|date('YmdHi') }}" class="text-nowrap">{{ o.acceptedAt|date('d/m/Y') }}</td>
+                        <td data-label="{{ 'Veicolo'|trans }}" data-search="{{ o.vehicle.plate }} {{ o.vehicle.plateLabel }}">{{ ui.plate(o.vehicle) }} <span class="mini text-muted">{{ o.vehicle.name }}</span></td>
+                        <td data-label="{{ 'Cliente'|trans }}">{{ o.customer.name }}</td>
+                        <td data-label="{{ 'Lavorazioni'|trans }}" class="small">{{ o.activeTasks|map(t => t.title)|join(', ') }}</td>
+                        <td data-label="{{ 'Consegna'|trans }}" data-order="{{ o.promisedAt ? o.promisedAt|date('YmdHi') }}" class="text-nowrap">{{ o.status == 'DELIVERED' and o.deliveredAt ? o.deliveredAt|date('d/m/Y') : (o.promisedAt ? o.promisedAt|date('d/m/Y H:i') : '—') }}</td>
                         <td class="hide-mobile">{{ ui.order_status(o) }}</td>
                     </tr>
                 {% endfor %}

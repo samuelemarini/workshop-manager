@@ -42,7 +42,7 @@ class UserController extends AppController
         if ($form->isSubmitted()) {
             $duplicate = $users->findOneBy(['username' => $user->getUsername(), 'cancel' => 0]);
             if ($duplicate && $duplicate !== $user) {
-                $form->get('username')->addError(new FormError('Username già presente nel sistema'));
+                $form->get('username')->addError(new FormError($this->trans('Username già presente nel sistema')));
             }
         }
 
@@ -53,7 +53,7 @@ class UserController extends AppController
             $user->setUpdatedAt(new \DateTime())->setUpdatedBy($this->user());
             $em->persist($user);
             $em->flush();
-            $this->addFlash('success', 'Utente salvato');
+            $this->addFlash('success', $this->trans('Utente salvato'));
 
             return $this->redirectToRoute($isAdmin ? 'user_index' : 'homepage');
         }
@@ -67,14 +67,14 @@ class UserController extends AppController
     {
         $this->checkToken($request);
         if ($user === $this->user()) {
-            $this->addFlash('danger', 'Non puoi eliminare il tuo utente.');
+            $this->addFlash('danger', $this->trans('Non puoi eliminare il tuo utente.'));
 
             return $this->redirectToRoute('user_edit', ['id' => $user->getId()]);
         }
         // cancellazione logica: lo username viene liberato per un eventuale nuovo utente
         $user->setUsername($user->getUsername().'#'.time())->setCancel(1)->setUpdatedBy($this->user())->setUpdatedAt(new \DateTime());
         $em->flush();
-        $this->addFlash('success', 'Utente eliminato');
+        $this->addFlash('success', $this->trans('Utente eliminato'));
 
         return $this->redirectToRoute('user_index');
     }

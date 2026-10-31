@@ -8,6 +8,8 @@ use App\Entity\TimeEntry;
 use App\Entity\User;
 use App\Entity\WorkOrder;
 use App\Repository\TimeEntryRepository;
+use App\Util\Trans;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
  * Regole di avanzamento di lavorazioni e ordini, usate dal tablet e dall'ufficio.
@@ -18,7 +20,8 @@ use App\Repository\TimeEntryRepository;
  * - quando tutte le lavorazioni sono completate l'ordine diventa "Pronta", oppure "In attesa"
  *   se ci sono lavori extra che aspettano ancora l'OK del cliente.
  *
- * Persiste e scrive lo storico, il flush è del chiamante.
+ * Persiste e scrive lo storico, il flush è del chiamante. Motivi di pausa/attesa e storico si salvano
+ * in italiano (sono chiavi fisse) e si traducono quando si mostrano (getter delle entità).
  */
 class Workflow
 {
@@ -27,17 +30,34 @@ class Workflow
     public function __construct(
         private TimeEntryRepository $entries,
         private ActivityLogger $logger,
+        private TranslatorInterface $translator,
     ) {
+    }
+
+    /**
+     * L'ordine aspetta l'OK del cliente? Il motivo lo scrive il Workflow in italiano, ma dalla scheda
+     * ordine si può scrivere a mano partendo dai suggerimenti tradotti: vale l'inizio in qualunque lingua.
+     */
+    private function isWaitingForOk(WorkOrder $order): bool
+    {
+        $reason = mb_strtolower((string) $order->getRawWaitingReason());
+        foreach (array_keys(Language::LANGUAGES) as $locale) {
+            if (str_starts_with($reason, mb_strtolower($this->translator->trans(self::WAITING_OK, [], 'messages', $locale)))) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function start(Task $task, Mechanic $mechanic, ?User $user): void
     {
         if (!in_array($task->getStatus(), [Task::TODO, Task::PAUSED, Task::RUNNING], true)) {
-            throw new \DomainException('Questa lavorazione non si può avviare ('.mb_strtolower($task->getStatusLabel()).').');
+            throw new \DomainException(Trans::t('Questa lavorazione non si può avviare (%status%).', ['%status%' => $task->getStatusLabel()]));
         }
         $open = $task->getOpenEntry();
         if ($open && $open->getMechanic() !== $mechanic) {
-            throw new \DomainException('Ci sta già lavorando '.$open->getMechanic()->getName().'.');
+            throw new \DomainException(Trans::t('Ci sta già lavorando %mechanic%.', ['%mechanic%' => $open->getMechanic()->getName()]));
         }
         if ($open) {
             return;
@@ -58,7 +78,7 @@ class Workflow
         if (in_array($order->getStatus(), [WorkOrder::ACCEPTED, WorkOrder::WAITING, WorkOrder::READY], true)) {
             $order->setStatus(WorkOrder::IN_PROGRESS)->setWaitingReason(null)->setReadyAt(null);
         }
-        $this->logger->order($order, ($wasPaused ? 'Ripresa: ' : 'Avviata: ').$task->getTitle(), $user, $mechanic);
+        $this->logger->order($order, $wasPaused ? 'Ripresa: %task%' : 'Avviata: %task%', $user, $mechanic, ['%task%' => $task->getTitle()]);
     }
 
     public function pause(Task $task, string $reason, ?User $user, ?Mechanic $mechanic = null): void
@@ -69,7 +89,7 @@ class Workflow
             return;
         }
         $task->setStatus(Task::PAUSED)->setPauseReason($reason);
-        $this->logger->order($task->getWorkOrder(), 'In pausa ('.$reason.'): '.$task->getTitle(), $user, $mechanic ?? $open?->getMechanic());
+        $this->logger->order($task->getWorkOrder(), 'In pausa (%reason%): %task%', $user, $mechanic ?? $open?->getMechanic(), ['%reason%' => $reason, '%task%' => $task->getTitle()]);
 
         $order = $task->getWorkOrder();
         if (in_array($reason, Task::WAITING_REASONS, true) && !$order->getRunningTask()) {
@@ -82,7 +102,7 @@ class Workflow
         $open = $task->getOpenEntry();
         $open?->close('Completata');
         $task->setStatus(Task::DONE)->setPauseReason(null)->setCompletedAt(new \DateTime());
-        $this->logger->order($task->getWorkOrder(), 'Completata: '.$task->getTitle(), $user, $mechanic ?? $open?->getMechanic());
+        $this->logger->order($task->getWorkOrder(), 'Completata: %task%', $user, $mechanic ?? $open?->getMechanic(), ['%task%' => $task->getTitle()]);
         $this->syncOrder($task->getWorkOrder(), $user);
     }
 
@@ -94,7 +114,7 @@ class Workflow
         if ($order->getStatus() === WorkOrder::READY) {
             $order->setStatus($order->getWorkedSeconds() > 0 ? WorkOrder::IN_PROGRESS : WorkOrder::ACCEPTED)->setReadyAt(null);
         }
-        $this->logger->order($order, 'Riaperta: '.$task->getTitle(), $user);
+        $this->logger->order($order, 'Riaperta: %task%', $user, params: ['%task%' => $task->getTitle()]);
     }
 
     /** Segnalazione dal tablet: lavoro extra che aspetta l'OK del cliente */
@@ -102,7 +122,7 @@ class Workflow
     {
         $task->setStatus(Task::PROPOSED)->setProposedBy($mechanic)->setProposedAt(new \DateTime())->setMechanic($mechanic);
         $order->addTask($task);
-        $this->logger->order($order, ($task->isUrgent() ? 'Problema di sicurezza segnalato: ' : 'Lavoro extra proposto: ').$task->getTitle(), $user, $mechanic);
+        $this->logger->order($order, $task->isUrgent() ? 'Problema di sicurezza segnalato: %task%' : 'Lavoro extra proposto: %task%', $user, $mechanic, ['%task%' => $task->getTitle()]);
     }
 
     public function decide(Task $task, bool $approved, ?User $user): void
@@ -112,9 +132,9 @@ class Workflow
         }
         $task->setStatus($approved ? Task::TODO : Task::REJECTED);
         $order = $task->getWorkOrder();
-        $this->logger->order($order, ($approved ? 'OK del cliente: ' : 'Rifiutata dal cliente: ').$task->getTitle(), $user);
+        $this->logger->order($order, $approved ? 'OK del cliente: %task%' : 'Rifiutata dal cliente: %task%', $user, params: ['%task%' => $task->getTitle()]);
 
-        $waitingForOk = $order->getStatus() === WorkOrder::WAITING && str_starts_with((string) $order->getWaitingReason(), self::WAITING_OK);
+        $waitingForOk = $order->getStatus() === WorkOrder::WAITING && $this->isWaitingForOk($order);
         if (($approved && $order->getStatus() === WorkOrder::READY) || ($waitingForOk && !$order->getProposedTasks())) {
             $order->setStatus(WorkOrder::IN_PROGRESS)->setWaitingReason(null)->setReadyAt(null);
         }
@@ -165,6 +185,7 @@ class Workflow
             WorkOrder::DELIVERED => $order->setDeliveredAt(new \DateTime()),
             default => null,
         };
-        $this->logger->order($order, 'Stato: '.$order->getStatusLabel().($reason ? ' ('.$reason.')' : ''), $user);
+        // nello storico l'etichetta italiana: si traduce quando si mostra
+        $this->logger->order($order, $reason ? 'Stato: %status% (%reason%)' : 'Stato: %status%', $user, params: ['%status%' => WorkOrder::STATUSES[$status], '%reason%' => $reason]);
     }
 }

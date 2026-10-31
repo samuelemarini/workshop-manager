@@ -67,9 +67,9 @@ class WorkOrderController extends AppController
             $order->setNumber($orders->nextNumber($order->getYear()));
             $em->persist($order);
             $em->flush();
-            $logger->order($order, 'Accettazione: '.$vehicle->getPlateLabel().' di '.$order->getCustomer()->getName(), $this->user());
+            $logger->order($order, 'Accettazione: %plate% di %customer%', $this->user(), params: ['%plate%' => $vehicle->getPlateLabel(), '%customer%' => $order->getCustomer()->getName()]);
             $em->flush();
-            $this->addFlash('success', $order->getCode().' creato: assegna e pianifica le lavorazioni');
+            $this->addFlash('success', $this->trans('%order% creato: assegna e pianifica le lavorazioni', ['%order%' => $order->getCode()]));
 
             return $this->redirectToRoute('order_show', ['id' => $order->getId()]);
         }
@@ -84,12 +84,12 @@ class WorkOrderController extends AppController
             $plate = Vehicle::normalizePlate($form->get('newPlate')->getData());
             $vehicle = $plate ? $vehicles->findOneByPlate($plate) : null;
             if (!$plate) {
-                $form->get('newPlate')->addError(new FormError('Scegli un veicolo dall\'elenco o scrivi la targa'));
+                $form->get('newPlate')->addError(new FormError($this->trans('Scegli un veicolo dall\'elenco o scrivi la targa')));
             } elseif (!$vehicle) {
                 $make = trim((string) $form->get('newMake')->getData());
                 $model = trim((string) $form->get('newModel')->getData());
                 if ($make === '' || $model === '') {
-                    $form->get($make === '' ? 'newMake' : 'newModel')->addError(new FormError('Serve per il veicolo nuovo'));
+                    $form->get($make === '' ? 'newMake' : 'newModel')->addError(new FormError($this->trans('Serve per il veicolo nuovo')));
                 } else {
                     $vehicle = (new Vehicle())->setPlate($plate)->setMake($make)->setModel($model)
                         ->setVersion($form->get('newVersion')->getData())->setYear($form->get('newYear')->getData());
@@ -109,7 +109,7 @@ class WorkOrderController extends AppController
                 $customer = $vehicle?->getOwner();
             }
             if (!$customer) {
-                $form->get('newCustomerName')->addError(new FormError('Scegli un cliente dall\'elenco o scrivi il nome'));
+                $form->get('newCustomerName')->addError(new FormError($this->trans('Scegli un cliente dall\'elenco o scrivi il nome')));
             }
             $order->setCustomer($customer);
         }
@@ -158,7 +158,7 @@ class WorkOrderController extends AppController
         if ($form->isSubmitted() && $form->isValid()) {
             $logger->order($order, 'Dati dell\'ordine modificati', $this->user());
             $em->flush();
-            $this->addFlash('success', 'Ordine salvato');
+            $this->addFlash('success', $this->trans('Ordine salvato'));
 
             return $this->redirectToRoute('order_show', ['id' => $order->getId()]);
         }
@@ -173,7 +173,7 @@ class WorkOrderController extends AppController
         $this->checkToken($request);
         $order->setInternalNotes(trim((string) $request->request->get('notes')) ?: null);
         $em->flush();
-        $this->addFlash('success', 'Note salvate');
+        $this->addFlash('success', $this->trans('Note salvate'));
 
         return $this->redirectToRoute('order_show', ['id' => $order->getId()]);
     }
@@ -183,9 +183,10 @@ class WorkOrderController extends AppController
     {
         $this->checkToken($request);
         $order->setCustomerNotifiedAt(new \DateTime());
-        $logger->order($order, 'Cliente avvisato'.($order->getCustomer()->getContactPreference() ? ' ('.$order->getCustomer()->getContactPreference().')' : ''), $this->user());
+        $via = $order->getCustomer()->getContactPreference();
+        $logger->order($order, $via ? 'Cliente avvisato (%via%)' : 'Cliente avvisato', $this->user(), params: ['%via%' => $via]);
         $em->flush();
-        $this->addFlash('success', 'Segnato: cliente avvisato');
+        $this->addFlash('success', $this->trans('Segnato: cliente avvisato'));
 
         return $this->back($request, 'order_show', ['id' => $order->getId()]);
     }
@@ -201,7 +202,7 @@ class WorkOrderController extends AppController
     #[Route('/{id}/print', name: 'order_print', requirements: ['id' => '\d+'])]
     public function print(WorkOrder $order, SettingRepository $settings): Response
     {
-        return $this->render('order/print.html.twig', ['order' => $order, 'rate' => $settings->labourRate()]);
+        return $this->render('order/print.html.twig', ['order' => $order, 'rate' => $settings->labourRate(), 'workshop' => $settings->get('workshop_name')]);
     }
 
     /** Solo ordini senza tempi registrati (aperti per errore); gli altri si annullano */
@@ -210,7 +211,7 @@ class WorkOrderController extends AppController
     {
         $this->checkToken($request);
         if ($order->getWorkedSeconds() > 0) {
-            $this->addFlash('danger', 'L\'ordine ha tempi registrati: annullalo invece di eliminarlo.');
+            $this->addFlash('danger', $this->trans('L\'ordine ha tempi registrati: annullalo invece di eliminarlo.'));
 
             return $this->redirectToRoute('order_show', ['id' => $order->getId()]);
         }
@@ -219,7 +220,7 @@ class WorkOrderController extends AppController
         }
         $em->remove($order);
         $em->flush();
-        $this->addFlash('success', 'Ordine eliminato');
+        $this->addFlash('success', $this->trans('Ordine eliminato'));
 
         return $this->redirectToRoute('board');
     }

@@ -8,12 +8,24 @@ use App\Service\AttachmentStorage;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
  * Base dei controller: utente tipizzato e verifica CSRF per le azioni POST senza form Symfony.
  */
 abstract class AppController extends AbstractController
 {
+    public static function getSubscribedServices(): array
+    {
+        return parent::getSubscribedServices() + ['translator' => TranslatorInterface::class];
+    }
+
+    /** Testo per l'utente nella sua lingua: la frase italiana è la chiave (dominio messages). */
+    protected function trans(string $id, array $params = []): string
+    {
+        return $this->container->get('translator')->trans($id, $params);
+    }
+
     protected function user(): User
     {
         $user = $this->getUser();
@@ -68,7 +80,7 @@ abstract class AppController extends AbstractController
                 }
             }
             $em->flush();
-            $this->addFlash('success', $count === 1 ? 'Documento caricato' : "$count documenti caricati");
+            $this->addFlash('success', $this->trans('Documento caricato|%count% documenti caricati', ['%count%' => $count]));
         } catch (\DomainException $e) {
             $this->addFlash('danger', $e->getMessage());
         }

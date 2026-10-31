@@ -6,6 +6,8 @@ use App\Entity\Role;
 use App\Entity\User;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
+use App\Service\Language;
+use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\EmailType;
 use Symfony\Component\Form\Extension\Core\Type\PasswordType;
 use Symfony\Component\Form\Extension\Core\Type\RepeatedType;
@@ -24,6 +26,14 @@ class UserType extends AbstractType
             ->add('name', TextType::class, ['label' => 'Nome'])
             ->add('surname', TextType::class, ['label' => 'Cognome', 'required' => false, 'empty_data' => ''])
             ->add('email', EmailType::class, ['label' => 'E-mail', 'required' => false])
+            // Ogni lingua col suo nome nella lingua stessa: i nomi non si traducono
+            ->add('locale', ChoiceType::class, [
+                'label' => 'Lingua',
+                'required' => false,
+                'placeholder' => 'Automatica (lingua del browser)',
+                'choices' => array_flip(Language::LANGUAGES),
+                'choice_translation_domain' => false,
+            ])
             ->add('plainPassword', RepeatedType::class, [
                 'type' => PasswordType::class,
                 'required' => $isNew,

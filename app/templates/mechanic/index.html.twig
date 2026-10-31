@@ -1,44 +1,44 @@
 {% extends 'base.html.twig' %}
 {% import '_macros.html.twig' as ui %}
 
-{% block title %}Meccanici e ore{% endblock %}
+{% block title %}{{ 'Meccanici e ore'|trans }}{% endblock %}
 
 {% block body %}
     {% set actions %}
-        <a class="btn btn-light btn-icon-lg" href="{{ path('mechanic_index', {week: monday.modify('-7 days')|date('Y-m-d')}) }}" aria-label="Settimana precedente"><i class="fa fa-chevron-left"></i></a>
-        <a class="btn btn-light" href="{{ path('mechanic_index') }}">Questa settimana</a>
-        <a class="btn btn-light btn-icon-lg" href="{{ path('mechanic_index', {week: monday.modify('+7 days')|date('Y-m-d')}) }}" aria-label="Settimana successiva"><i class="fa fa-chevron-right"></i></a>
-        <a class="btn btn-primary" href="#" data-modal="{{ path('mechanic_new') }}" data-title="Nuovo meccanico" data-size="modal-md"><i class="fa fa-plus"></i> Nuovo meccanico</a>
+        <a class="btn btn-light btn-icon-lg" href="{{ path('mechanic_index', {week: monday.modify('-7 days')|date('Y-m-d')}) }}" aria-label="{{ 'Settimana precedente'|trans }}"><i class="fa fa-chevron-left"></i></a>
+        <a class="btn btn-light" href="{{ path('mechanic_index') }}">{{ 'Questa settimana'|trans }}</a>
+        <a class="btn btn-light btn-icon-lg" href="{{ path('mechanic_index', {week: monday.modify('+7 days')|date('Y-m-d')}) }}" aria-label="{{ 'Settimana successiva'|trans }}"><i class="fa fa-chevron-right"></i></a>
+        <a class="btn btn-primary" href="#" data-modal="{{ path('mechanic_new') }}" data-title="{{ 'Nuovo meccanico'|trans }}" data-size="modal-md"><i class="fa fa-plus"></i> {{ 'Nuovo meccanico'|trans }}</a>
     {% endset %}
-    {{ include('_page_header.html.twig', {icon: 'fa-screwdriver-wrench', title: 'Meccanici e ore', subtitle: 'Settimana dal ' ~ monday|date('d/m') ~ ' al ' ~ monday.modify('+5 days')|date('d/m/Y') ~ ' · ore dalle registrazioni del tablet', actions: actions}) }}
+    {{ include('_page_header.html.twig', {icon: 'fa-screwdriver-wrench', title: 'Meccanici e ore'|trans, subtitle: 'Settimana dal %from% al %to% · ore dalle registrazioni del tablet'|trans({'%from%': monday|date('d/m'), '%to%': monday.modify('+5 days')|date('d/m/Y')})|e, actions: actions}) }}
 
     <div class="table-card">
         <table class="app-table cards-mobile">
             <thead>
                 <tr>
-                    <th>Meccanico</th>
+                    <th>{{ 'Meccanico'|trans }}</th>
                     {% for d in days %}<th class="num">{{ d|dow }} {{ d|date('d') }}</th>{% endfor %}
-                    <th class="num">Totale</th><th class="num">Chiuse</th><th class="num">Stimato / effettivo</th><th></th>
+                    <th class="num">{{ 'Totale'|trans }}</th><th class="num">{{ 'Chiuse'|trans }}</th><th class="num">{{ 'Stimato / effettivo'|trans }}</th><th></th>
                 </tr>
             </thead>
             <tbody>
                 {% for r in rows %}
                     {% set m = r.mechanic %}
                     <tr>
-                        <td class="cell-head"><span class="d-flex align-items-center gap-2">{{ ui.mav(m, 'lg') }}<span><span class="fw-bold">{{ m.fullName }}</span><span class="d-block mini text-muted">{{ m.dailyHours|num }} h/giorno{{ m.hasPin ? ' · PIN' }}</span></span></span></td>
+                        <td class="cell-head"><span class="d-flex align-items-center gap-2">{{ ui.mav(m, 'lg') }}<span><span class="fw-bold">{{ m.fullName }}</span><span class="d-block mini text-muted">{{ '%hours% h/giorno'|trans({'%hours%': m.dailyHours|num}) }}{{ m.hasPin ? ' · PIN' }}</span></span></span></td>
                         {% for d in days %}
                             {% set s = r.days[d|date('Y-m-d')] ?? 0 %}
                             <td data-label="{{ d|dow }} {{ d|date('d/m') }}" class="num{{ not s ? ' text-muted' }}">{{ s ? s|duration : '—' }}</td>
                         {% endfor %}
-                        <td data-label="Totale" class="num fw-bold">{{ r.total|duration }} <span class="mini text-muted fw-normal">/ {{ r.capacity|duration }}</span></td>
-                        <td data-label="Lavorazioni chiuse" class="num">{{ r.done }}</td>
-                        <td data-label="Stimato / effettivo" class="num">
+                        <td data-label="{{ 'Totale'|trans }}" class="num fw-bold">{{ r.total|duration }} <span class="mini text-muted fw-normal">/ {{ r.capacity|duration }}</span></td>
+                        <td data-label="{{ 'Lavorazioni chiuse'|trans }}" class="num">{{ r.done }}</td>
+                        <td data-label="{{ 'Stimato / effettivo'|trans }}" class="num">
                             {% if r.efficiency %}
                                 {{ r.estimated|duration }} / {{ r.spent|duration }}
-                                <span class="status ms-1 {{ r.efficiency >= 100 ? 's-green' : (r.efficiency >= 85 ? 's-orange' : 's-red') }}" title="tempo stimato diviso tempo impiegato">{{ r.efficiency }}%</span>
+                                <span class="status ms-1 {{ r.efficiency >= 100 ? 's-green' : (r.efficiency >= 85 ? 's-orange' : 's-red') }}" title="{{ 'tempo stimato diviso tempo impiegato'|trans }}">{{ r.efficiency }}%</span>
                             {% else %}—{% endif %}
                         </td>
-                        <td class="actions"><a class="btn btn-light btn-icon btn-sm" href="#" data-modal="{{ path('mechanic_edit', {id: m.id}) }}" data-title="{{ m.fullName }}" data-size="modal-md" aria-label="Modifica {{ m.fullName }}"><i class="fa fa-pen"></i></a></td>
+                        <td class="actions"><a class="btn btn-light btn-icon btn-sm" href="#" data-modal="{{ path('mechanic_edit', {id: m.id}) }}" data-title="{{ m.fullName }}" data-size="modal-md" aria-label="{{ 'Modifica %name%'|trans({'%name%': m.fullName}) }}"><i class="fa fa-pen"></i></a></td>
                     </tr>
                 {% endfor %}
             </tbody>
@@ -46,20 +46,20 @@
     </div>
 
     <div class="table-card">
-        <div class="card-box p-0 mb-0 shadow-none"><div class="card-title"><span><i class="fa fa-flag-checkered"></i> Lavorazioni chiuse nella settimana</span></div></div>
+        <div class="card-box p-0 mb-0 shadow-none"><div class="card-title"><span><i class="fa fa-flag-checkered"></i> {{ 'Lavorazioni chiuse nella settimana'|trans }}</span></div></div>
         <table class="app-table cards-mobile" id="doneTasks" data-datatable data-order='[[0,"desc"]]'>
-            <thead><tr><th>Chiusa</th><th>Lavorazione</th><th>Veicolo</th><th>Meccanico</th><th class="num">Stimato</th><th class="num">Effettivo</th><th class="num">Scarto</th></tr></thead>
+            <thead><tr><th>{{ 'Chiusa'|trans }}</th><th>{{ 'Lavorazione'|trans }}</th><th>{{ 'Veicolo'|trans }}</th><th>{{ 'Meccanico'|trans }}</th><th class="num">{{ 'Stimato'|trans }}</th><th class="num">{{ 'Effettivo'|trans }}</th><th class="num">{{ 'Scarto'|trans }}</th></tr></thead>
             <tbody>
                 {% for t in done %}
                     {% set diff = t.workedSeconds - t.estimatedMinutes * 60 %}
                     <tr data-href="{{ path('order_show', {id: t.workOrder.id}) }}">
                         <td class="cell-head" data-order="{{ t.completedAt|date('YmdHi') }}">{{ t.completedAt|date('d/m H:i') }}</td>
                         <td class="cell-title fw-semibold">{{ t.title }} <span class="mini text-muted fw-normal">{{ t.workOrder.code }}</span></td>
-                        <td data-label="Veicolo">{{ t.workOrder.vehicle.name }} <span class="mini text-muted">{{ t.workOrder.vehicle.plateLabel }}</span></td>
-                        <td data-label="Meccanico">{{ ui.mav(t.mechanic) }} {{ t.mechanic.name ?? '' }}</td>
-                        <td data-label="Stimato" class="num">{{ t.estimatedMinutes|minutes }}</td>
-                        <td data-label="Effettivo" class="num">{{ t.workedSeconds|duration }}</td>
-                        <td data-label="Scarto" class="num fw-bold {{ diff > 600 ? 'text-danger' : (diff < -600 ? 'text-success') }}" data-order="{{ diff }}">{{ diff >= 0 ? '+' : '−' }}{{ (diff|abs)|duration }}</td>
+                        <td data-label="{{ 'Veicolo'|trans }}">{{ t.workOrder.vehicle.name }} <span class="mini text-muted">{{ t.workOrder.vehicle.plateLabel }}</span></td>
+                        <td data-label="{{ 'Meccanico'|trans }}">{{ ui.mav(t.mechanic) }} {{ t.mechanic.name ?? '' }}</td>
+                        <td data-label="{{ 'Stimato'|trans }}" class="num">{{ t.estimatedMinutes|minutes }}</td>
+                        <td data-label="{{ 'Effettivo'|trans }}" class="num">{{ t.workedSeconds|duration }}</td>
+                        <td data-label="{{ 'Scarto'|trans }}" class="num fw-bold {{ diff > 600 ? 'text-danger' : (diff < -600 ? 'text-success') }}" data-order="{{ diff }}">{{ diff >= 0 ? '+' : '−' }}{{ (diff|abs)|duration }}</td>
                     </tr>
                 {% endfor %}
             </tbody>

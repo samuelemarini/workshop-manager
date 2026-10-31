@@ -32,7 +32,7 @@ class CustomerController extends AppController
         if ($form->isSubmitted() && $form->isValid()) {
             $em->persist($customer);
             $em->flush();
-            $this->addFlash('success', 'Cliente salvato');
+            $this->addFlash('success', $this->trans('Cliente salvato'));
 
             return $this->redirectToRoute('customer_index');
         }
@@ -50,7 +50,7 @@ class CustomerController extends AppController
         $this->checkToken($request);
         $customer->setCancel(1);
         $em->flush();
-        $this->addFlash('success', 'Cliente eliminato');
+        $this->addFlash('success', $this->trans('Cliente eliminato'));
 
         return $this->redirectToRoute('customer_index');
     }

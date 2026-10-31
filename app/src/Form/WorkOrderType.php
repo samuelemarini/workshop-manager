@@ -73,6 +73,8 @@ class WorkOrderType extends AbstractType
                     'expanded' => true,
                     'query_builder' => fn ($r) => $r->createQueryBuilder('t')->where('t.cancel = 0')->orderBy('t.sort')->addOrderBy('t.name'),
                     'choice_label' => fn (TaskTemplate $t) => $t->getName(),
+                    // nomi delle lavorazioni tipo: dati, non si traducono
+                    'choice_translation_domain' => false,
                 ])
                 ->add('otherTask', TextType::class, ['mapped' => false, 'required' => false, 'label' => 'Altro da fare', 'attr' => ['placeholder' => 'es. Controllare rumore sospensione anteriore']]);
         } else {

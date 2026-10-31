@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use App\Repository\TimeEntryRepository;
+use App\Util\Trans;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
@@ -56,6 +57,8 @@ class TimeEntry
     public function setEndedAt(?\DateTimeInterface $date): static { $this->endedAt = $date; return $this; }
 
     public function getEndReason(): ?string { return $this->endReason; }
+    /** Motivo di chiusura tradotto, per lo schermo (getEndReason() resta la chiave italiana, es. "Completata") */
+    public function getEndReasonLabel(): ?string { return $this->endReason === null ? null : Trans::label($this->endReason); }
     public function setEndReason(?string $reason): static { $this->endReason = $reason; return $this; }
 
     public function close(string $reason, ?\DateTimeInterface $at = null): void

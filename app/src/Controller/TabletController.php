@@ -76,7 +76,7 @@ class TabletController extends AppController
     {
         $this->checkToken($request);
         if ($mechanic->getCancel() || !$mechanic->checkPin($request->request->get('pin'))) {
-            $this->addFlash('danger', 'PIN sbagliato, riprova.');
+            $this->addFlash('danger', $this->trans('PIN sbagliato, riprova.'));
 
             return $this->toChoice();
         }
@@ -216,12 +216,12 @@ class TabletController extends AppController
             return $this->toChoice();
         }
         if ($task->getMechanic() && $task->getMechanic() !== $me) {
-            $this->addFlash('danger', 'L\'ha già presa '.$task->getMechanic()->getName().'.');
+            $this->addFlash('danger', $this->trans('L\'ha già presa %mechanic%.', ['%mechanic%' => $task->getMechanic()->getName()]));
         } else {
             $task->setMechanic($me);
-            $logger->order($task->getWorkOrder(), 'Presa in carico dal tablet: '.$task->getTitle(), $this->user(), $me);
+            $logger->order($task->getWorkOrder(), 'Presa in carico dal tablet: %task%', $this->user(), $me, ['%task%' => $task->getTitle()]);
             $this->em->flush();
-            $this->addFlash('success', 'Fatto: la trovi nei tuoi prossimi lavori');
+            $this->addFlash('success', $this->trans('Fatto: la trovi nei tuoi prossimi lavori'));
         }
 
         return $this->redirectToRoute('tablet_list');
@@ -232,12 +232,12 @@ class TabletController extends AppController
     {
         $this->checkToken($request);
         if (!$this->mechanic($request)) {
-            return new JsonResponse(['error' => 'Scegli di nuovo il tuo nome'], 403);
+            return new JsonResponse(['error' => $this->trans('Scegli di nuovo il tuo nome')], 403);
         }
         try {
             $done = $task->toggleCheck($index);
         } catch (\OutOfRangeException) {
-            return new JsonResponse(['error' => 'Controllo non trovato'], 404);
+            return new JsonResponse(['error' => $this->trans('Controllo non trovato')], 404);
         }
         $this->em->flush();
 
@@ -249,7 +249,7 @@ class TabletController extends AppController
     {
         $this->checkToken($request);
         if (!$this->mechanic($request)) {
-            return new JsonResponse(['error' => 'Scegli di nuovo il tuo nome'], 403);
+            return new JsonResponse(['error' => $this->trans('Scegli di nuovo il tuo nome')], 403);
         }
         $part->setQuantity($part->getQuantity() + ($request->request->getInt('delta') < 0 ? -1 : 1));
         $this->em->flush();
@@ -275,9 +275,9 @@ class TabletController extends AppController
                 ->setTask($task)->setAddedBy($me);
             $task->getWorkOrder()->addPart($part);
             $this->em->persist($part);
-            $logger->order($task->getWorkOrder(), ($missing ? 'Ricambio da ordinare: ' : 'Ricambio usato: ').$description, $this->user(), $me);
+            $logger->order($task->getWorkOrder(), $missing ? 'Ricambio da ordinare: %part%' : 'Ricambio usato: %part%', $this->user(), $me, ['%part%' => $description]);
             $this->em->flush();
-            $this->addFlash('success', $missing ? 'Richiesta passata all\'ufficio' : 'Ricambio registrato');
+            $this->addFlash('success', $this->trans($missing ? 'Richiesta passata all\'ufficio' : 'Ricambio registrato'));
         }
 
         return $this->redirectToRoute('tablet_task', ['id' => $task->getId(), 'tab' => 'parts']);
@@ -296,7 +296,7 @@ class TabletController extends AppController
             $task->getWorkOrder()->readKm($km);
         }
         $this->em->flush();
-        $this->addFlash('success', 'Salvato');
+        $this->addFlash('success', $this->trans('Salvato'));
 
         return $this->redirectToRoute('tablet_task', ['id' => $task->getId(), 'tab' => 'note']);
     }
@@ -326,13 +326,13 @@ class TabletController extends AppController
         $text = trim((string) $request->request->get('text'));
         $kind = (string) $request->request->get('kind');
         if ($text === '') {
-            $this->addFlash('danger', 'Scrivi cosa hai trovato');
+            $this->addFlash('danger', $this->trans('Scrivi cosa hai trovato'));
 
             return $this->redirectToRoute('tablet_task', ['id' => $task->getId()]);
         }
         $order = $task->getWorkOrder();
         if ($kind === 'info') {
-            $logger->order($order, 'Nota da '.$me->getName().': '.$text, $this->user(), $me);
+            $logger->order($order, 'Nota da %mechanic%: %text%', $this->user(), $me, ['%mechanic%' => $me->getName(), '%text%' => $text]);
         } else {
             $minutes = max(0, $request->request->getInt('minutes'));
             $extra = (new Task())->setTitle(mb_substr($text, 0, 150))->setDescription(mb_strlen($text) > 150 ? $text : null)
@@ -350,7 +350,7 @@ class TabletController extends AppController
             }
         }
         $this->em->flush();
-        $this->addFlash('success', $kind === 'info' ? 'Nota passata all\'ufficio' : 'Segnalazione inviata: l\'ufficio sente il cliente');
+        $this->addFlash('success', $this->trans($kind === 'info' ? 'Nota passata all\'ufficio' : 'Segnalazione inviata: l\'ufficio sente il cliente'));
 
         return $this->redirectToRoute('tablet_task', ['id' => $task->getId(), 'tab' => 'note']);
     }

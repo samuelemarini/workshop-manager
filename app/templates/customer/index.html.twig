@@ -1,27 +1,27 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Clienti{% endblock %}
+{% block title %}{{ 'Clienti'|trans }}{% endblock %}
 
 {% block body %}
     {% set actions %}
-        <a class="btn btn-primary" href="{{ path('customer_new') }}"><i class="fa fa-plus"></i> Nuovo cliente</a>
+        <a class="btn btn-primary" href="{{ path('customer_new') }}"><i class="fa fa-plus"></i> {{ 'Nuovo cliente'|trans }}</a>
     {% endset %}
-    {{ include('_page_header.html.twig', {icon: 'fa-user-group', title: 'Clienti', subtitle: customers|length ~ ' clienti, privati e aziende', actions: actions}) }}
+    {{ include('_page_header.html.twig', {icon: 'fa-user-group', title: 'Clienti'|trans, subtitle: '%count% cliente, privati e aziende|%count% clienti, privati e aziende'|trans({'%count%': customers|length}), actions: actions}) }}
 
     <div class="table-card">
         <div class="table-toolbar">
-            <div class="search-pill"><i class="fa fa-search"></i><input type="text" placeholder="Cerca nome, telefono..." data-table-search="#customers" aria-label="Cerca cliente"></div>
+            <div class="search-pill"><i class="fa fa-search"></i><input type="text" placeholder="{{ 'Cerca nome, telefono...'|trans }}" data-table-search="#customers" aria-label="{{ 'Cerca cliente'|trans }}"></div>
         </div>
         <table class="app-table cards-mobile" id="customers" data-datatable data-order='[[0,"asc"]]'>
-            <thead><tr><th>Cliente</th><th>Telefono</th><th>E-mail</th><th>Avvisarlo con</th><th>Città</th></tr></thead>
+            <thead><tr><th>{{ 'Cliente'|trans }}</th><th>{{ 'Telefono'|trans }}</th><th>{{ 'E-mail'|trans }}</th><th>{{ 'Avvisarlo con'|trans }}</th><th>{{ 'Città'|trans }}</th></tr></thead>
             <tbody>
                 {% for c in customers %}
                     <tr data-href="{{ path('customer_edit', {id: c.id}) }}">
                         <td class="cell-head fw-semibold">{{ c.name }}</td>
-                        <td data-label="Telefono">{% if c.phone %}<a href="tel:{{ c.phone|replace({' ': ''}) }}">{{ c.phone }}</a>{% endif %}</td>
-                        <td data-label="E-mail">{{ c.email }}</td>
-                        <td data-label="Avvisarlo con">{{ c.contactPreference }}</td>
-                        <td data-label="Città">{{ c.city }}</td>
+                        <td data-label="{{ 'Telefono'|trans }}">{% if c.phone %}<a href="tel:{{ c.phone|replace({' ': ''}) }}">{{ c.phone }}</a>{% endif %}</td>
+                        <td data-label="{{ 'E-mail'|trans }}">{{ c.email }}</td>
+                        <td data-label="{{ 'Avvisarlo con'|trans }}">{{ c.contactPreference|trans }}</td>
+                        <td data-label="{{ 'Città'|trans }}">{{ c.city }}</td>
                     </tr>
                 {% endfor %}
             </tbody>

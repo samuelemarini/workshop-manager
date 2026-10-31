@@ -1,35 +1,36 @@
 {% extends 'base.html.twig' %}
 {% import '_macros.html.twig' as ui %}
 
-{% block title %}Planning meccanici{% endblock %}
+{% block title %}{{ 'Planning meccanici'|trans }}{% endblock %}
 
 {% block body %}
     {% set actions %}
-        <a class="btn btn-light btn-icon-lg" href="{{ path('planning', {day: day.modify('-1 day')|date('Y-m-d')}) }}" aria-label="Giorno precedente"><i class="fa fa-chevron-left"></i></a>
-        <a class="btn btn-light" href="{{ path('planning') }}">Oggi</a>
-        <a class="btn btn-light btn-icon-lg" href="{{ path('planning', {day: day.modify('+1 day')|date('Y-m-d')}) }}" aria-label="Giorno successivo"><i class="fa fa-chevron-right"></i></a>
-        <input type="date" class="form-control" style="width: auto" value="{{ day|date('Y-m-d') }}" aria-label="Vai al giorno" onchange="location.href='{{ path('planning') }}?day='+this.value">
-        <a class="btn btn-primary" href="{{ path('order_new') }}"><i class="fa fa-plus"></i> Nuova accettazione</a>
+        <a class="btn btn-light btn-icon-lg" href="{{ path('planning', {day: day.modify('-1 day')|date('Y-m-d')}) }}" aria-label="{{ 'Giorno precedente'|trans }}"><i class="fa fa-chevron-left"></i></a>
+        <a class="btn btn-light" href="{{ path('planning') }}">{{ 'Oggi'|trans }}</a>
+        <a class="btn btn-light btn-icon-lg" href="{{ path('planning', {day: day.modify('+1 day')|date('Y-m-d')}) }}" aria-label="{{ 'Giorno successivo'|trans }}"><i class="fa fa-chevron-right"></i></a>
+        <input type="date" class="form-control" style="width: auto" value="{{ day|date('Y-m-d') }}" aria-label="{{ 'Vai al giorno'|trans }}" onchange="location.href='{{ path('planning') }}?day='+this.value">
+        <a class="btn btn-primary" href="{{ path('order_new') }}"><i class="fa fa-plus"></i> {{ 'Nuova accettazione'|trans }}</a>
     {% endset %}
-    {{ include('_page_header.html.twig', {icon: 'fa-calendar-day', title: 'Planning meccanici', subtitle: day|long_date|capitalize ~ '<span class="hide-mobile"> · trascina le lavorazioni per spostarle o assegnarle</span>', actions: actions}) }}
+    {% set day_label = day|long_date %}{# solo la prima lettera: |capitalize abbasserebbe il mese in inglese/tedesco #}
+    {{ include('_page_header.html.twig', {icon: 'fa-calendar-day', title: 'Planning meccanici'|trans, subtitle: (day_label|slice(0, 1)|upper ~ day_label|slice(1))|e ~ '<span class="hide-mobile"> · ' ~ 'trascina le lavorazioni per spostarle o assegnarle'|trans|e ~ '</span>', actions: actions}) }}
 
     <section class="table-card">
         <div class="table-toolbar">
             <div class="d-flex gap-3 flex-wrap align-items-center">
                 {{ include('planning/_modes.html.twig', {current: 'day'}) }}
-                <nav class="day-chips" aria-label="Giorni della settimana">
+                <nav class="day-chips" aria-label="{{ 'Giorni della settimana'|trans }}">
                     {% for d in days %}
                         <a class="{{ d|date('Ymd') == day|date('Ymd') ? 'active' }}{{ d|date('Ymd') == today|date('Ymd') ? ' today' }}" href="{{ path('planning', {day: d|date('Y-m-d')}) }}">{{ d|dow }}<b>{{ d|date('j') }}</b></a>
                     {% endfor %}
                 </nav>
             </div>
             <div class="plan-legend hide-mobile">
-                <span><i class="sw b-run"></i>In corso</span>
-                <span><i class="sw" style="border: 2px solid #1a1718"></i>Pianificata</span>
-                <span><i class="sw b-done"></i>Completata</span>
-                <span><i class="sw b-pause"></i>In pausa</span>
-                <span><i class="sw b-block"></i>In attesa</span>
-                <span><i class="sw b-tbc"></i>Da autorizzare</span>
+                <span><i class="sw b-run"></i>{{ 'In corso'|trans }}</span>
+                <span><i class="sw" style="border: 2px solid #1a1718"></i>{{ 'Pianificata'|trans }}</span>
+                <span><i class="sw b-done"></i>{{ 'Completata'|trans }}</span>
+                <span><i class="sw b-pause"></i>{{ 'In pausa'|trans }}</span>
+                <span><i class="sw b-block"></i>{{ 'In attesa'|trans }}</span>
+                <span><i class="sw b-tbc"></i>{{ 'Da autorizzare'|trans }}</span>
             </div>
         </div>
 
@@ -53,7 +54,7 @@
                             <div class="agenda-item b-free"><span class="agenda-time">{{ e.free.range }}</span><span class="agenda-body"><strong>{{ e.free.label }}</strong></span></div>
                         {% endif %}
                     {% else %}
-                        <div class="mini text-muted py-2">Niente in programma</div>
+                        <div class="mini text-muted py-2">{{ 'Niente in programma'|trans }}</div>
                     {% endfor %}
                 </div>
             {% endfor %}
@@ -62,7 +63,7 @@
         <div class="pg-wrap hide-mobile">
             <div class="pg" id="planningGrid" style="--slots: {{ grid.slots }}" data-start="{{ grid.start }}" data-slot="15" data-day="{{ day|date('Y-m-d') }}" data-move-url="{{ path('planning_move') }}" data-token="{{ csrf_token('submit') }}">
                 <div class="pg-row pg-head">
-                    <div class="pg-label">Meccanico</div>
+                    <div class="pg-label">{{ 'Meccanico'|trans }}</div>
                     {% for h in grid.hours %}<div class="pg-hour" style="grid-column: {{ h.col }} / span {{ h.span }}">{{ h.label }}</div>{% endfor %}
                     {% if grid.now %}<div class="pg-now-label" style="grid-column: {{ grid.now.col }}; margin-left: {{ grid.now.offset }}%">{{ grid.now.label }}</div>{% endif %}
                 </div>
@@ -76,9 +77,9 @@
                             </div>
                         </div>
                         {% for h in grid.hours %}<div class="pg-cell" style="grid-column: {{ h.col }} / span {{ h.span }}"></div>{% endfor %}
-                        {% if grid.lunch %}<div class="pg-lunch" style="grid-column: {{ grid.lunch.col }} / span {{ grid.lunch.span }}" title="Pausa pranzo"></div>{% endif %}
+                        {% if grid.lunch %}<div class="pg-lunch" style="grid-column: {{ grid.lunch.col }} / span {{ grid.lunch.span }}" title="{{ 'Pausa pranzo'|trans }}"></div>{% endif %}
                         {% for f in row.free %}
-                            <div class="pg-bar b-free" style="grid-column: {{ f.gc }}; grid-row: 1; pointer-events: none"><strong>{{ f.label }}</strong><span>dalle {{ f.start }}</span></div>
+                            <div class="pg-bar b-free" style="grid-column: {{ f.gc }}; grid-row: 1; pointer-events: none"><strong>{{ f.label }}</strong><span>{{ 'dalle %time%'|trans({'%time%': f.start}) }}</span></div>
                         {% endfor %}
                         {% for b in row.bars %}
                             <a class="pg-bar b-{{ b.kind }}" href="#" data-modal="{{ path('task_plan', {id: b.task.id}) }}" data-title="{{ b.task.workOrder.code }} · {{ b.task.title }}" title="{{ b.title }}"
@@ -89,7 +90,7 @@
                         {% if grid.now %}<div class="pg-now" style="grid-column: {{ grid.now.col }}; margin-left: {{ grid.now.offset }}%"></div>{% endif %}
                     </div>
                 {% else %}
-                    <div class="empty-state">Nessun meccanico attivo: aggiungili dalle impostazioni.</div>
+                    <div class="empty-state">{{ 'Nessun meccanico attivo: aggiungili dalle impostazioni.'|trans }}</div>
                 {% endfor %}
             </div>
         </div>
@@ -98,31 +99,31 @@
     <div class="row g-4">
         <div class="col-xl-7">
             <section class="card-box mb-0">
-                <div class="card-title"><span><i class="fa fa-inbox"></i> Da pianificare</span><span class="mini text-muted hide-mobile">trascinale sul planning o usa Pianifica</span></div>
+                <div class="card-title"><span><i class="fa fa-inbox"></i> {{ 'Da pianificare'|trans }}</span><span class="mini text-muted hide-mobile">{{ 'trascinale sul planning o usa Pianifica'|trans }}</span></div>
                 {% for t in backlog %}
                     {% set o = t.workOrder %}
                     <div class="backlog-row" draggable="true" data-task="{{ t.id }}" data-minutes="{{ t.estimatedMinutes }}">
                         <span class="dur">{{ t.estimatedMinutes|minutes }}</span>
                         <div class="grow">
                             <div><a class="code-lg" href="{{ path('order_show', {id: o.id}) }}">{{ o.code }}</a> · <b>{{ t.title }}</b></div>
-                            <div class="mini text-muted">{{ o.vehicle.name }} {{ o.vehicle.plateLabel }} · {{ o.promisedAt ? 'consegna ' ~ o.promisedAt|when : 'consegna da concordare' }}</div>
+                            <div class="mini text-muted">{{ o.vehicle.name }} {{ o.vehicle.plateLabel }} · {{ o.promisedAt ? 'consegna %when%'|trans({'%when%': o.promisedAt|when}) : 'consegna da concordare'|trans }}</div>
                         </div>
                         {{ ui.mav(t.mechanic) }}
-                        <a class="btn btn-light btn-sm" href="#" data-modal="{{ path('task_plan', {id: t.id, day: day|date('Y-m-d')}) }}" data-title="{{ o.code }} · {{ t.title }}">Pianifica</a>
+                        <a class="btn btn-light btn-sm" href="#" data-modal="{{ path('task_plan', {id: t.id, day: day|date('Y-m-d')}) }}" data-title="{{ o.code }} · {{ t.title }}">{{ 'Pianifica'|trans }}</a>
                     </div>
                 {% else %}
-                    <div class="empty-state py-3"><i class="fa fa-circle-check"></i>Tutte le lavorazioni hanno un orario</div>
+                    <div class="empty-state py-3"><i class="fa fa-circle-check"></i>{{ 'Tutte le lavorazioni hanno un orario'|trans }}</div>
                 {% endfor %}
             </section>
         </div>
         <div class="col-xl-5">
             <section class="card-box mb-0">
-                <div class="card-title"><span><i class="fa fa-chart-simple"></i> Carico del giorno</span></div>
+                <div class="card-title"><span><i class="fa fa-chart-simple"></i> {{ 'Carico del giorno'|trans }}</span></div>
                 {% for l in grid.loads %}
                     <div class="load-row">
-                        <div class="d-flex justify-content-between gap-2"><b>{{ ui.mav(l.mechanic) }} {{ l.mechanic.name }}</b><span class="fw-bold">{{ (l.planned / 60)|num(1) }} h su {{ (l.capacity / 60)|num }}</span></div>
+                        <div class="d-flex justify-content-between gap-2"><b>{{ ui.mav(l.mechanic) }} {{ l.mechanic.name }}</b><span class="fw-bold">{{ '%done% h su %total%'|trans({'%done%': (l.planned / 60)|num(1), '%total%': (l.capacity / 60)|num}) }}</span></div>
                         <div class="bars"><span style="width: {{ l.workedPct }}%; background: {{ l.mechanic.color == 'black' ? '#1a1718' : '#8a0a1c' }}"></span><span style="width: {{ max(0, l.pct - l.workedPct) }}%; background: {{ l.mechanic.color == 'black' ? '#9b9393' : '#e88a97' }}"></span></div>
-                        <div class="mini text-muted">{{ l.worked|hours }} già lavorate · {{ max(0, l.capacity - l.planned) // 60 }} h e {{ max(0, l.capacity - l.planned) % 60 }} min ancora liberi</div>
+                        <div class="mini text-muted">{{ '%worked% già lavorate · %hours% h e %minutes% min ancora liberi'|trans({'%worked%': l.worked|hours, '%hours%': max(0, l.capacity - l.planned) // 60, '%minutes%': max(0, l.capacity - l.planned) % 60}) }}</div>
                     </div>
                 {% endfor %}
             </section>

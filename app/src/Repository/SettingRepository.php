@@ -14,6 +14,7 @@ use Doctrine\Persistence\ManagerRegistry;
 class SettingRepository extends ServiceEntityRepository
 {
     public const DEFAULTS = [
+        'workshop_name' => '',
         'labour_rate' => '45',
         'day_start' => '08:00',
         'day_end' => '18:00',

@@ -1,4 +1,5 @@
 import $ from 'jquery';
+import { t, separators, formatNumber } from './js/i18n.js';
 import './styles/app.scss';
 
 window.jQuery = window.$ = $;
@@ -17,21 +18,30 @@ import DataTable from 'datatables.net-dt';
 require('datatables.net-dt/css/dataTables.dataTables.min.css');
 DataTable.use($);
 
-const DT_LANGUAGE = {
-    emptyTable: 'Nessun dato presente',
-    info: '_START_–_END_ di _TOTAL_',
-    infoEmpty: 'Nessun elemento',
-    infoFiltered: '(filtrati da _MAX_)',
-    zeroRecords: 'Nessun risultato',
+// testi letti quando servono (non al caricamento del modulo), separatori della lingua della pagina
+const dtLanguage = () => ({
+    emptyTable: t('Nessun dato presente'),
+    info: t('%start%–%end% di %total%', { start: '_START_', end: '_END_', total: '_TOTAL_' }),
+    infoEmpty: t('Nessun elemento'),
+    infoFiltered: t('(filtrati da %max%)', { max: '_MAX_' }),
+    zeroRecords: t('Nessun risultato'),
+    decimal: separators().decimal,
+    thousands: separators().group,
     paginate: { first: '«', previous: '‹', next: '›', last: '»' },
-};
+    aria: {
+        orderable: t(': attiva per ordinare'),
+        orderableReverse: t(': attiva per invertire l’ordine'),
+        orderableRemove: t(': attiva per togliere l’ordinamento'),
+        paginate: { first: t('Prima pagina'), previous: t('Pagina precedente'), next: t('Pagina successiva'), last: t('Ultima pagina') },
+    },
+});
 
 /* --------------------------------------------------------------------------
    Inizializzazione dei componenti dentro un contenitore (pagina o modale)
    -------------------------------------------------------------------------- */
 function initComponents(root) {
     const $root = $(root);
-    $root.find('select.selectpicker').selectpicker({ noneSelectedText: '—', liveSearchPlaceholder: 'Cerca...', noneResultsText: 'Nessun risultato per {0}' });
+    $root.find('select.selectpicker').selectpicker({ noneSelectedText: '—', liveSearchPlaceholder: t('Cerca...'), noneResultsText: t('Nessun risultato per %term%', { term: '{0}' }) });
     $root.find('[data-bs-toggle="tooltip"]').each((i, el) => new bootstrap.Tooltip(el));
     // il calendario si apre cliccando ovunque nel campo, non solo sull'icona
     $root.find('input[type=date], input[type=datetime-local], input[type=time]').on('click', function () {
@@ -55,7 +65,7 @@ function initTables() {
             order: $table.data('order') || [],
             paging: $table.find('tbody tr').length > 25,
             info: $table.find('tbody tr').length > 25,
-            language: DT_LANGUAGE,
+            language: dtLanguage(),
             columnDefs: [{ targets: 'no-sort', orderable: false }],
             layout: { topStart: null, topEnd: null, bottomStart: 'info', bottomEnd: 'paging' },
         });
@@ -173,7 +183,7 @@ $(document).on('click', '[data-collection-add]', function () {
     const html = $holder.data('prototype').replace(/__name__/g, index);
     $holder.attr('data-index', index + 1);
     const $row = $(`<div class="collection-row"><div class="fields">${html}</div>
-        <button type="button" class="btn btn-light btn-icon" data-collection-remove title="Rimuovi"><i class="fa fa-trash"></i></button></div>`);
+        <button type="button" class="btn btn-light btn-icon" data-collection-remove title="${t('Rimuovi')}" aria-label="${t('Rimuovi')}"><i class="fa fa-trash"></i></button></div>`);
     $holder.append($row);
     initComponents($row);
 });
@@ -314,7 +324,7 @@ function initAcceptance() {
             $customer.selectpicker('val', opt.dataset.owner);
         }
         const km = form.querySelector('[name$="[kmIn]"]');
-        if (opt && opt.dataset.km && km && !km.value) km.placeholder = `ultimi letti ${opt.dataset.km}`;
+        if (opt && opt.dataset.km && km && !km.value) km.placeholder = t('ultimi letti %km%', { km: formatNumber(Number(opt.dataset.km), 0) });
         sync();
     });
     $customer.on('changed.bs.select change', sync);
@@ -409,7 +419,7 @@ function initBoard() {
         refreshCounts();
         fetch(card.dataset.statusUrl, { method: 'POST', body, headers: { 'X-Requested-With': 'XMLHttpRequest' } })
             .then((r) => { if (!r.ok) throw new Error(); })
-            .catch(() => { from.insertBefore(card, from.querySelector('.kempty')); refreshCounts(); alert('Non è stato possibile cambiare lo stato.'); });
+            .catch(() => { from.insertBefore(card, from.querySelector('.kempty')); refreshCounts(); alert(t('Non è stato possibile cambiare lo stato.')); });
     };
 
     board.querySelectorAll('.kcard').forEach((card) => {

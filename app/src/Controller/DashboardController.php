@@ -59,25 +59,26 @@ class DashboardController extends AppController
         $deliveries = array_values(array_filter($open, fn (WorkOrder $o) => $o->isPromisedOn($today)));
         usort($deliveries, fn ($a, $b) => $a->getPromisedAt() <=> $b->getPromisedAt());
 
-        // cose da gestire
+        // cose da gestire ('action' resta la chiave italiana: il template la confronta e la stampa con |trans)
         $alerts = [];
         foreach ($tasks->findProposed() as $t) {
             $alerts[] = ['tone' => $t->isUrgent() ? 'red' : 'orange', 'icon' => $t->isUrgent() ? 'fa-triangle-exclamation' : 'fa-phone', 'order' => $t->getWorkOrder(),
-                'title' => $t->getWorkOrder()->getCode().' · '.($t->isUrgent() ? 'problema di sicurezza' : 'serve l\'OK del cliente'),
-                'text' => $t->getTitle().' · segnalato da '.$t->getProposedBy()?->getName().' alle '.$t->getProposedAt()?->format('H:i'), 'action' => 'Decidi'];
+                'title' => $this->trans($t->isUrgent() ? '%order% · problema di sicurezza' : '%order% · serve l\'OK del cliente', ['%order%' => $t->getWorkOrder()->getCode()]),
+                'text' => $this->trans('%task% · segnalato da %mechanic% alle %time%', ['%task%' => $t->getTitle(), '%mechanic%' => $t->getProposedBy()?->getName(), '%time%' => $t->getProposedAt()?->format('H:i')]), 'action' => 'Decidi'];
         }
         foreach ($open as $o) {
             if ($o->isLate($now)) {
-                $alerts[] = ['tone' => 'red', 'icon' => 'fa-clock', 'order' => $o, 'title' => $o->getCode().' · consegna in ritardo',
-                    'text' => $o->getVehicle()->getName().' di '.$o->getCustomer()->getName().', promessa '.Dates::when($o->getPromisedAt()), 'action' => 'Apri'];
+                $alerts[] = ['tone' => 'red', 'icon' => 'fa-clock', 'order' => $o, 'title' => $this->trans('%order% · consegna in ritardo', ['%order%' => $o->getCode()]),
+                    'text' => $this->trans('%vehicle% di %customer%, promessa %when%', ['%vehicle%' => $o->getVehicle()->getName(), '%customer%' => $o->getCustomer()->getName(), '%when%' => Dates::when($o->getPromisedAt())]), 'action' => 'Apri'];
             } elseif ($o->hasUnassignedTasks() && $o->getPromisedAt() && $o->getPromisedAt() < $today->modify('+2 days')) {
-                $alerts[] = ['tone' => 'red', 'icon' => 'fa-user-slash', 'order' => $o, 'title' => $o->getCode().' senza meccanico',
-                    'text' => 'Consegna promessa '.Dates::when($o->getPromisedAt()).': assegna le lavorazioni dal planning.', 'action' => 'Pianifica'];
+                $alerts[] = ['tone' => 'red', 'icon' => 'fa-user-slash', 'order' => $o, 'title' => $this->trans('%order% senza meccanico', ['%order%' => $o->getCode()]),
+                    'text' => $this->trans('Consegna promessa %when%: assegna le lavorazioni dal planning.', ['%when%' => Dates::when($o->getPromisedAt())]), 'action' => 'Pianifica'];
             }
             foreach ($o->getParts() as $p) {
                 if ($p->isMissing()) {
-                    $alerts[] = ['tone' => 'grey', 'icon' => 'fa-box', 'order' => $o, 'title' => $o->getCode().' · '.($p->getStatus() === Part::TO_ORDER ? 'ricambio da ordinare' : 'ricambio in arrivo'),
-                        'text' => $p->getDescription().($p->getExpectedAt() ? ' · previsto '.Dates::when($p->getExpectedAt(), false) : '').($p->getSupplier() ? ' ('.$p->getSupplier().')' : ''), 'action' => 'Apri'];
+                    $alerts[] = ['tone' => 'grey', 'icon' => 'fa-box', 'order' => $o, 'title' => $this->trans($p->getStatus() === Part::TO_ORDER ? '%order% · ricambio da ordinare' : '%order% · ricambio in arrivo', ['%order%' => $o->getCode()]),
+                        'text' => ($p->getExpectedAt() ? $this->trans('%part% · previsto %when%', ['%part%' => $p->getDescription(), '%when%' => Dates::when($p->getExpectedAt(), false)]) : $p->getDescription())
+                            .($p->getSupplier() ? ' ('.$p->getSupplier().')' : ''), 'action' => 'Apri'];
                 }
             }
         }

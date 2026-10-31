@@ -1,13 +1,13 @@
 {% extends 'base.html.twig' %}
 {% import '_macros.html.twig' as ui %}
 
-{% block title %}{{ customer.id ? customer.name : 'Nuovo cliente' }}{% endblock %}
+{% block title %}{{ customer.id ? customer.name : 'Nuovo cliente'|trans }}{% endblock %}
 
 {% block body %}
     {% set actions %}
-        {% if customer.id %}{{ ui.post_button(path('customer_delete', {id: customer.id}), ' Elimina', 'fa-trash', 'btn-light text-danger', 'Eliminare il cliente ' ~ customer.name ~ '?') }}{% endif %}
+        {% if customer.id %}{{ ui.post_button(path('customer_delete', {id: customer.id}), ' ' ~ 'Elimina'|trans, 'fa-trash', 'btn-light text-danger', 'Eliminare il cliente %name%?'|trans({'%name%': customer.name})) }}{% endif %}
     {% endset %}
-    {{ include('_page_header.html.twig', {back: path('customer_index'), title: customer.id ? customer.name : 'Nuovo cliente', actions: actions}) }}
+    {{ include('_page_header.html.twig', {back: path('customer_index'), title: customer.id ? customer.name : 'Nuovo cliente'|trans, actions: actions}) }}
 
     <div class="card-box" style="max-width: 960px">
         {{ form_start(form) }}
@@ -25,19 +25,19 @@
                 <div class="col-12">{{ form_row(form.notes) }}</div>
             </div>
             <div class="form-actions">
-                <a class="btn btn-light" href="{{ path('customer_index') }}">Annulla</a>
-                <button class="btn btn-primary"><i class="fa fa-check"></i> Salva</button>
+                <a class="btn btn-light" href="{{ path('customer_index') }}">{{ 'Annulla'|trans }}</a>
+                <button class="btn btn-primary"><i class="fa fa-check"></i> {{ 'Salva'|trans }}</button>
             </div>
         {{ form_end(form) }}
     </div>
 
     {% if customer.id %}
         <div class="card-box" style="max-width: 960px">
-            <div class="card-title"><span><i class="fa fa-car-side"></i> Veicoli</span><a class="mini" href="{{ path('vehicle_new', {owner: customer.id}) }}"><i class="fa fa-plus"></i> Aggiungi</a></div>
+            <div class="card-title"><span><i class="fa fa-car-side"></i> {{ 'Veicoli'|trans }}</span><a class="mini" href="{{ path('vehicle_new', {owner: customer.id}) }}"><i class="fa fa-plus"></i> {{ 'Aggiungi'|trans }}</a></div>
             {% for v in vehicles %}
-                <a class="list-row text-body" href="{{ path('vehicle_show', {id: v.id}) }}">{{ ui.plate(v) }}<div class="grow fw-semibold">{{ v.name }} <span class="text-muted fw-normal">{{ v.version }}</span></div><span class="mini text-muted">{{ v.workOrders|length }} ordini</span></a>
+                <a class="list-row text-body" href="{{ path('vehicle_show', {id: v.id}) }}">{{ ui.plate(v) }}<div class="grow fw-semibold">{{ v.name }} <span class="text-muted fw-normal">{{ v.version }}</span></div><span class="mini text-muted">{{ '%count% ordine|%count% ordini'|trans({'%count%': v.workOrders|length}) }}</span></a>
             {% else %}
-                <div class="empty-state py-2">Nessun veicolo registrato</div>
+                <div class="empty-state py-2">{{ 'Nessun veicolo registrato'|trans }}</div>
             {% endfor %}
         </div>
     {% endif %}

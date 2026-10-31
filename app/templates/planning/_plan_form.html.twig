@@ -1,13 +1,13 @@
 {% extends app.request.xmlHttpRequest ? '_modal.html.twig' : '_modal_page.html.twig' %}
 {% import '_macros.html.twig' as ui %}
 
-{% block modal_title %}Pianifica · {{ task.title }}{% endblock %}
+{% block modal_title %}{{ 'Pianifica'|trans }} · {{ task.title }}{% endblock %}
 
 {% block modal_content %}
     {% set o = task.workOrder %}
     <div class="d-flex align-items-center gap-2 flex-wrap mb-3">
         <a class="code-lg" href="{{ path('order_show', {id: o.id}) }}">{{ o.code }}</a>{{ ui.plate(o.vehicle) }}<span class="text-muted">{{ o.vehicle.name }} · {{ o.customer.name }}</span>
-        {% if o.promisedAt %}<span class="ms-auto mini fw-bold">Consegna {{ o.promisedAt|when }}</span>{% endif %}
+        {% if o.promisedAt %}<span class="ms-auto mini fw-bold">{{ 'Consegna %when%'|trans({'%when%': o.promisedAt|when}) }}</span>{% endif %}
     </div>
     {{ form_start(form) }}
         <div class="row">
@@ -17,7 +17,7 @@
         </div>
         {% if others %}
             <div class="mb-3">
-                <label class="form-label">Pianifica anche, una dopo l'altra</label>
+                <label class="form-label">{{ "Pianifica anche, una dopo l'altra"|trans }}</label>
                 <div class="template-checks">
                     {% for t in others %}
                         <div class="form-check">
@@ -26,12 +26,12 @@
                         </div>
                     {% endfor %}
                 </div>
-                <div class="form-text">Stesso meccanico: ognuna parte quando finisce la precedente, saltando pausa pranzo e chiusura.</div>
+                <div class="form-text">{{ 'Stesso meccanico: ognuna parte quando finisce la precedente, saltando pausa pranzo e chiusura.'|trans }}</div>
             </div>
         {% endif %}
         <div class="form-actions">
-            <a class="btn btn-light me-auto" href="{{ path('order_show', {id: o.id}) }}">Apri l'ordine</a>
-            <button class="btn btn-primary"><i class="fa fa-check"></i> Salva</button>
+            <a class="btn btn-light me-auto" href="{{ path('order_show', {id: o.id}) }}">{{ "Apri l'ordine"|trans }}</a>
+            <button class="btn btn-primary"><i class="fa fa-check"></i> {{ 'Salva'|trans }}</button>
         </div>
     {{ form_end(form) }}
 {% endblock %}

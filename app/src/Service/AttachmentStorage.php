@@ -4,6 +4,7 @@ namespace App\Service;
 
 use App\Entity\Attachment;
 use App\Entity\User;
+use App\Util\Trans;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 
@@ -24,10 +25,10 @@ class AttachmentStorage
     public function store(UploadedFile $file, ?User $user): Attachment
     {
         if (!$file->isValid()) {
-            throw new \DomainException('Caricamento non riuscito: '.$file->getErrorMessage());
+            throw new \DomainException(Trans::t('Caricamento non riuscito: %error%', ['%error%' => $file->getErrorMessage()]));
         }
         if ($file->getSize() > self::MAX_SIZE) {
-            throw new \DomainException('Il file supera la dimensione massima di 30 MB.');
+            throw new \DomainException(Trans::t('Il file supera la dimensione massima di %size% MB.', ['%size%' => self::MAX_SIZE / 1024 / 1024]));
         }
 
         $extension = strtolower($file->getClientOriginalExtension() ?: ($file->guessExtension() ?? 'bin'));

@@ -1,35 +1,36 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Impostazioni{% endblock %}
+{% block title %}{{ 'Impostazioni'|trans }}{% endblock %}
 
 {% block body %}
-    {{ include('_page_header.html.twig', {icon: 'fa-sliders', title: 'Impostazioni', subtitle: 'Orari dell\'officina e lavorazioni tipo · le voci già usate si disattivano, non si cancellano'}) }}
+    {{ include('_page_header.html.twig', {icon: 'fa-sliders', title: 'Impostazioni'|trans, subtitle: 'Orari dell\'officina e lavorazioni tipo · le voci già usate si disattivano, non si cancellano'|trans|e}) }}
 
     <div class="row g-4">
         <div class="col-xl-5 d-flex flex-column gap-4">
             <section class="card-box mb-0">
-                <div class="card-title"><span><i class="fa fa-clock"></i> Officina</span></div>
+                <div class="card-title"><span><i class="fa fa-clock"></i> {{ 'Officina'|trans }}</span></div>
                 <form method="post" action="{{ path('settings_workshop') }}">
                     <input type="hidden" name="_token" value="{{ csrf_token('submit') }}">
                     <div class="row">
-                        <div class="col-6 mb-3"><label class="form-label" for="day_start">Apertura</label><input class="form-control" type="time" id="day_start" name="day_start" value="{{ settings.day_start }}"></div>
-                        <div class="col-6 mb-3"><label class="form-label" for="day_end">Chiusura</label><input class="form-control" type="time" id="day_end" name="day_end" value="{{ settings.day_end }}"></div>
-                        <div class="col-6 mb-3"><label class="form-label" for="lunch_start">Pausa pranzo dalle</label><input class="form-control" type="time" id="lunch_start" name="lunch_start" value="{{ settings.lunch_start }}"></div>
-                        <div class="col-6 mb-3"><label class="form-label" for="lunch_end">alle</label><input class="form-control" type="time" id="lunch_end" name="lunch_end" value="{{ settings.lunch_end }}"></div>
-                        <div class="col-6 mb-3"><label class="form-label" for="labour_rate">Manodopera € / ora</label><input class="form-control" id="labour_rate" name="labour_rate" value="{{ settings.labour_rate }}" inputmode="decimal"></div>
+                        <div class="col-12 mb-3"><label class="form-label" for="workshop_name">{{ 'Nome dell\'officina'|trans }}</label><input class="form-control" id="workshop_name" name="workshop_name" value="{{ settings.workshop_name }}" maxlength="100" placeholder="{{ app_name|trans }}"></div>
+                        <div class="col-6 mb-3"><label class="form-label" for="day_start">{{ 'Apertura'|trans }}</label><input class="form-control" type="time" id="day_start" name="day_start" value="{{ settings.day_start }}"></div>
+                        <div class="col-6 mb-3"><label class="form-label" for="day_end">{{ 'Chiusura'|trans }}</label><input class="form-control" type="time" id="day_end" name="day_end" value="{{ settings.day_end }}"></div>
+                        <div class="col-6 mb-3"><label class="form-label" for="lunch_start">{{ 'Pausa pranzo dalle'|trans }}</label><input class="form-control" type="time" id="lunch_start" name="lunch_start" value="{{ settings.lunch_start }}"></div>
+                        <div class="col-6 mb-3"><label class="form-label" for="lunch_end">{{ 'alle'|trans }}</label><input class="form-control" type="time" id="lunch_end" name="lunch_end" value="{{ settings.lunch_end }}"></div>
+                        <div class="col-6 mb-3"><label class="form-label" for="labour_rate">{{ 'Manodopera € / ora'|trans }}</label><input class="form-control" id="labour_rate" name="labour_rate" value="{{ settings.labour_rate }}" inputmode="decimal"></div>
                     </div>
-                    <div class="mini text-muted mb-3">Orari e pausa disegnano il planning; la tariffa serve per i totali stimati e la scheda stampata.</div>
-                    <div class="text-end"><button class="btn btn-primary"><i class="fa fa-check"></i> Salva</button></div>
+                    <div class="mini text-muted mb-3">{{ 'Il nome va in testa alla scheda di lavoro stampata. Orari e pausa disegnano il planning; la tariffa serve per i totali stimati e la scheda stampata.'|trans }}</div>
+                    <div class="text-end"><button class="btn btn-primary"><i class="fa fa-check"></i> {{ 'Salva'|trans }}</button></div>
                 </form>
             </section>
         </div>
 
         <div class="col-xl-7">
             <section class="card-box mb-0">
-                <div class="card-title"><span><i class="fa fa-list-check"></i> Lavorazioni tipo</span><a class="btn btn-light btn-sm" href="#" data-modal="{{ path('settings_template_new') }}" data-title="Nuova lavorazione tipo"><i class="fa fa-plus"></i> Aggiungi</a></div>
-                <p class="mini text-muted">In accettazione si spuntano per creare le lavorazioni con tempo stimato e controlli già pronti.</p>
+                <div class="card-title"><span><i class="fa fa-list-check"></i> {{ 'Lavorazioni tipo'|trans }}</span><a class="btn btn-light btn-sm" href="#" data-modal="{{ path('settings_template_new') }}" data-title="{{ 'Nuova lavorazione tipo'|trans }}"><i class="fa fa-plus"></i> {{ 'Aggiungi'|trans }}</a></div>
+                <p class="mini text-muted">{{ 'In accettazione si spuntano per creare le lavorazioni con tempo stimato e controlli già pronti.'|trans }}</p>
                 <table class="app-table">
-                    <thead><tr><th>Lavorazione</th><th class="num">Tempo</th><th class="num">Controlli</th><th></th></tr></thead>
+                    <thead><tr><th>{{ 'Lavorazione'|trans }}</th><th class="num">{{ 'Tempo'|trans }}</th><th class="num">{{ 'Controlli'|trans }}</th><th></th></tr></thead>
                     <tbody>
                         {% for t in templates %}
                             <tr class="{{ t.cancel ? 'row-muted' }}">
@@ -37,10 +38,10 @@
                                 <td class="num">{{ t.estimatedMinutes|minutes }}</td>
                                 <td class="num">{{ t.checklist|length }}</td>
                                 <td class="actions">
-                                    <a class="btn btn-light btn-icon btn-sm" href="#" data-modal="{{ path('settings_template_edit', {id: t.id}) }}" data-title="{{ t.name }}" aria-label="Modifica {{ t.name }}"><i class="fa fa-pen"></i></a>
+                                    <a class="btn btn-light btn-icon btn-sm" href="#" data-modal="{{ path('settings_template_edit', {id: t.id}) }}" data-title="{{ t.name }}" aria-label="{{ 'Modifica %name%'|trans({'%name%': t.name}) }}"><i class="fa fa-pen"></i></a>
                                     <form class="d-inline" method="post" action="{{ path('settings_template_toggle', {id: t.id}) }}">
                                         <input type="hidden" name="_token" value="{{ csrf_token('submit') }}">
-                                        <button class="btn btn-light btn-sm">{{ t.cancel ? 'Riattiva' : 'Disattiva' }}</button>
+                                        <button class="btn btn-light btn-sm">{{ t.cancel ? 'Riattiva'|trans : 'Disattiva'|trans }}</button>
                                     </form>
                                 </td>
                             </tr>

@@ -17,7 +17,7 @@ class TaskTemplateType extends AbstractType
         $builder
             ->add('name', TextType::class, ['label' => 'Nome'])
             ->add('estimatedMinutes', IntegerType::class, ['label' => 'Tempo stimato (minuti)', 'attr' => ['min' => 0, 'step' => 5]])
-            ->add('sort', IntegerType::class, ['label' => 'Ordine', 'required' => false, 'empty_data' => '0'])
+            ->add('sort', IntegerType::class, ['label' => 'Ordine in elenco', 'required' => false, 'empty_data' => '0'])
             ->add('checklistText', TextareaType::class, ['label' => 'Controlli da spuntare (uno per riga)', 'required' => false, 'attr' => ['rows' => 8]]);
     }
 

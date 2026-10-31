@@ -1,44 +1,45 @@
 {% extends 'base.html.twig' %}
 {% import '_macros.html.twig' as ui %}
 
-{% block title %}Dashboard{% endblock %}
+{% block title %}{{ 'Dashboard'|trans }}{% endblock %}
 
 {% block body %}
     {% set actions %}
-        <a class="btn btn-light" href="{{ path('planning') }}"><i class="fa fa-calendar-day"></i> Planning</a>
-        <a class="btn btn-primary" href="{{ path('order_new') }}"><i class="fa fa-plus"></i> Nuova accettazione</a>
+        <a class="btn btn-light" href="{{ path('planning') }}"><i class="fa fa-calendar-day"></i> {{ 'Planning'|trans }}</a>
+        <a class="btn btn-primary" href="{{ path('order_new') }}"><i class="fa fa-plus"></i> {{ 'Nuova accettazione'|trans }}</a>
     {% endset %}
-    {{ include('_page_header.html.twig', {icon: 'fa-gauge-high', title: 'Dashboard officina', subtitle: now|long_date|capitalize ~ ' · ore ' ~ now|date('G:i'), actions: actions}) }}
+    {% set today_label = now|long_date %}{# solo la prima lettera: |capitalize abbasserebbe il mese in inglese/tedesco #}
+    {{ include('_page_header.html.twig', {icon: 'fa-gauge-high', title: 'Dashboard officina'|trans, subtitle: (today_label|slice(0, 1)|upper ~ today_label|slice(1) ~ ' · ' ~ 'ore %time%'|trans({'%time%': now|date('G:i')}))|e, actions: actions}) }}
 
     <div class="stat-grid">
         <a class="stat-tile" href="{{ path('board') }}">
-            <div class="stat-label">Veicoli in officina</div>
+            <div class="stat-label">{{ 'Veicoli in officina'|trans }}</div>
             <div class="stat-value">{{ stats.inShop }}</div>
-            <div class="stat-hint">ordini aperti, pronte comprese</div>
+            <div class="stat-hint">{{ 'ordini aperti, pronte comprese'|trans }}</div>
             <i class="fa fa-car-side"></i>
         </a>
         <a class="stat-tile is-red" href="{{ path('planning') }}">
-            <div class="stat-label">Lavorazioni in corso</div>
+            <div class="stat-label">{{ 'Lavorazioni in corso'|trans }}</div>
             <div class="stat-value">{{ stats.running }}</div>
-            <div class="stat-hint">{{ stats.running ? 'meccanici al lavoro adesso' : 'nessuno sta lavorando' }}</div>
+            <div class="stat-hint">{{ (stats.running ? 'meccanici al lavoro adesso' : 'nessuno sta lavorando')|trans }}</div>
             <i class="fa fa-wrench"></i>
         </a>
         <a class="stat-tile is-warning" href="{{ path('board') }}">
-            <div class="stat-label">Ferme in attesa</div>
+            <div class="stat-label">{{ 'Ferme in attesa'|trans }}</div>
             <div class="stat-value">{{ stats.waiting|length }}</div>
-            <div class="stat-hint">{{ stats.waiting|map(o => o.waitingReason|split(' · ')|first|lower)|join(', ')|default('nessuna') }}</div>
+            <div class="stat-hint">{{ stats.waiting|map(o => o.waitingReason|split(' · ')|first|lower)|join(', ')|default('nessuna'|trans) }}</div>
             <i class="fa fa-hourglass-half"></i>
         </a>
         <a class="stat-tile is-ok" href="{{ path('board') }}">
-            <div class="stat-label">Pronte da consegnare</div>
+            <div class="stat-label">{{ 'Pronte da consegnare'|trans }}</div>
             <div class="stat-value">{{ stats.ready|length }}</div>
-            <div class="stat-hint">{{ stats.ready|map(o => o.vehicle.name)|join(', ')|default('nessuna') }}</div>
+            <div class="stat-hint">{{ stats.ready|map(o => o.vehicle.name)|join(', ')|default('nessuna'|trans) }}</div>
             <i class="fa fa-circle-check"></i>
         </a>
         <a class="stat-tile" href="{{ path('mechanic_index') }}">
-            <div class="stat-label">Ore lavorate oggi</div>
+            <div class="stat-label">{{ 'Ore lavorate oggi'|trans }}</div>
             <div class="stat-value">{{ (stats.worked / 3600)|num(1) }} <small>/ {{ (stats.capacity / 3600)|num }} h</small></div>
-            <div class="stat-hint">{{ cards|length }} meccanici</div>
+            <div class="stat-hint">{{ '%count% meccanico|%count% meccanici'|trans({'%count%': cards|length}) }}</div>
             <i class="fa fa-stopwatch"></i>
         </a>
     </div>
@@ -51,14 +52,14 @@
                     {{ ui.mav(c.mechanic, 'lg') }}
                     <div class="flex-grow-1" style="min-width: 0">
                         <div class="mech-name">{{ c.mechanic.name }}</div>
-                        <div class="mini text-muted">{{ c.todoCount }} lavorazioni ancora da fare</div>
+                        <div class="mini text-muted">{{ '%count% lavorazione ancora da fare|%count% lavorazioni ancora da fare'|trans({'%count%': c.todoCount}) }}</div>
                     </div>
                     {% if t and t.status == 'RUNNING' %}
-                        <span class="live">Al lavoro da {{ t.openEntry.startedAt|date('G:i') }}</span>
+                        <span class="live">{{ 'Al lavoro da %time%'|trans({'%time%': t.openEntry.startedAt|date('G:i')}) }}</span>
                     {% elseif t %}
-                        <span class="live is-paused">In pausa</span>
+                        <span class="live is-paused">{{ 'In pausa'|trans }}</span>
                     {% else %}
-                        <span class="live is-idle">Libero</span>
+                        <span class="live is-idle">{{ 'Libero'|trans }}</span>
                     {% endif %}
                 </div>
                 {% if t %}
@@ -69,21 +70,21 @@
                         </div>
                         <div class="fw-bold">{{ t.title }}</div>
                         <div class="d-flex align-items-end justify-content-between gap-2">
-                            <div><span class="timer-big{{ t.overEstimate ? ' text-danger' }}" {% if t.status == 'RUNNING' %}data-timer="{{ t.workedSeconds }}" data-format="hm"{% endif %}>{{ t.workedSeconds|duration }}</span> <span class="mini text-muted">lavorate</span></div>
-                            <div class="mini text-muted text-end">stimate <b class="text-body">{{ t.estimatedMinutes|minutes }}</b>{% if t.status == 'PAUSED' %}<br>{{ t.pauseReason }}{% endif %}</div>
+                            <div><span class="timer-big{{ t.overEstimate ? ' text-danger' }}" {% if t.status == 'RUNNING' %}data-timer="{{ t.workedSeconds }}" data-format="hm"{% endif %}>{{ t.workedSeconds|duration }}</span> <span class="mini text-muted">{{ 'lavorate'|trans }}</span></div>
+                            <div class="mini text-muted text-end">{{ 'stimate %time%'|trans({'%time%': '<b class="text-body">' ~ t.estimatedMinutes|minutes ~ '</b>'})|raw }}{% if t.status == 'PAUSED' %}<br>{{ t.pauseReason|trans }}{% endif %}</div>
                         </div>
                         {% set pct = t.estimatedMinutes ? min(100, (t.workedSeconds / 60 / t.estimatedMinutes * 100)|round) : 0 %}
                         <div class="progress-thin{{ c.mechanic.color == 'black' ? ' dark' }}"><div style="width: {{ pct }}%"></div></div>
                     </a>
                     {% if o.proposedTasks|length %}
-                        <div class="warn-box"><i class="fa fa-triangle-exclamation"></i><span>{{ o.proposedTasks|map(p => p.title)|join(', ') }}: in attesa dell'OK del cliente.</span></div>
+                        <div class="warn-box"><i class="fa fa-triangle-exclamation"></i><span>{{ "%tasks%: in attesa dell'OK del cliente."|trans({'%tasks%': o.proposedTasks|map(p => p.title)|join(', ')}) }}</span></div>
                     {% endif %}
                 {% else %}
-                    <div class="empty-state py-3"><i class="fa fa-mug-hot"></i>Nessuna lavorazione in corso</div>
+                    <div class="empty-state py-3"><i class="fa fa-mug-hot"></i>{{ 'Nessuna lavorazione in corso'|trans }}</div>
                 {% endif %}
                 <div class="mech-foot">
-                    <span><span class="text-muted">Poi:</span> <b>{% if c.next %}{{ c.next.plannedStart ? c.next.plannedStart|date('G:i') ~ ' · ' }}{{ c.next.title }} · {{ c.next.workOrder.vehicle.name }}{% else %}niente in programma{% endif %}</b></span>
-                    <span class="text-muted">Oggi {{ c.worked|hours }} lavorate</span>
+                    <span><span class="text-muted">{{ 'Poi:'|trans }}</span> <b>{% if c.next %}{{ c.next.plannedStart ? c.next.plannedStart|date('G:i') ~ ' · ' }}{{ c.next.title }} · {{ c.next.workOrder.vehicle.name }}{% else %}{{ 'niente in programma'|trans }}{% endif %}</b></span>
+                    <span class="text-muted">{{ 'Oggi %hours% lavorate'|trans({'%hours%': c.worked|hours}) }}</span>
                 </div>
             </section>
         {% endfor %}
@@ -93,23 +94,23 @@
         <div class="col-xl-7">
             <section class="table-card mb-0">
                 <div class="card-box p-0 mb-0 shadow-none">
-                    <div class="card-title"><span><i class="fa fa-clipboard-list"></i> Ordini di lavoro aperti</span><a class="mini" href="{{ path('board') }}">Apri la bacheca</a></div>
+                    <div class="card-title"><span><i class="fa fa-clipboard-list"></i> {{ 'Ordini di lavoro aperti'|trans }}</span><a class="mini" href="{{ path('board') }}">{{ 'Apri la bacheca'|trans }}</a></div>
                 </div>
                 <div class="table-responsive">
                 <table class="app-table cards-mobile">
-                    <thead><tr><th>Ordine</th><th>Veicolo</th><th>Cliente e lavori</th><th>Meccanici</th><th>Consegna</th><th>Stato</th></tr></thead>
+                    <thead><tr><th>{{ 'Ordine'|trans }}</th><th>{{ 'Veicolo'|trans }}</th><th>{{ 'Cliente e lavori'|trans }}</th><th>{{ 'Meccanici'|trans }}</th><th>{{ 'Consegna'|trans }}</th><th>{{ 'Stato'|trans }}</th></tr></thead>
                     <tbody>
                         {% for o in open %}
                             <tr data-href="{{ path('order_show', {id: o.id}) }}" class="{{ o.late ? 'row-alert' }}">
                                 <td class="cell-head"><span class="code-lg">{{ o.code }}</span> <span class="only-mobile">{{ ui.order_status(o) }}</span></td>
-                                <td data-label="Veicolo">{{ ui.plate(o.vehicle) }}<div class="mini text-muted mt-1 text-nowrap">{{ o.vehicle.name }}</div></td>
-                                <td data-label="Cliente"><div class="fw-semibold">{{ o.customer.name }}</div><div class="mini text-muted"><b>{{ o.doneCount }}/{{ o.activeTasks|length }}</b> · {{ o.activeTasks|map(t => t.title)|join(', ')|default('nessuna lavorazione') }}</div></td>
-                                <td data-label="Meccanici" class="text-nowrap">{% for m in o.mechanics %}{{ ui.mav(m) }}{% else %}{% if o.activeTasks|length %}{{ ui.mav(null) }}{% endif %}{% endfor %}</td>
-                                <td data-label="Consegna" class="text-nowrap fw-semibold{{ o.late ? ' text-danger' }}">{{ o.promisedAt|when|default('—') }}</td>
+                                <td data-label="{{ 'Veicolo'|trans }}">{{ ui.plate(o.vehicle) }}<div class="mini text-muted mt-1 text-nowrap">{{ o.vehicle.name }}</div></td>
+                                <td data-label="{{ 'Cliente'|trans }}"><div class="fw-semibold">{{ o.customer.name }}</div><div class="mini text-muted"><b>{{ o.doneCount }}/{{ o.activeTasks|length }}</b> · {{ o.activeTasks|map(t => t.title)|join(', ')|default('nessuna lavorazione'|trans) }}</div></td>
+                                <td data-label="{{ 'Meccanici'|trans }}" class="text-nowrap">{% for m in o.mechanics %}{{ ui.mav(m) }}{% else %}{% if o.activeTasks|length %}{{ ui.mav(null) }}{% endif %}{% endfor %}</td>
+                                <td data-label="{{ 'Consegna'|trans }}" class="text-nowrap fw-semibold{{ o.late ? ' text-danger' }}">{{ o.promisedAt|when|default('—') }}</td>
                                 <td class="hide-mobile">{{ ui.order_status(o) }}</td>
                             </tr>
                         {% else %}
-                            <tr><td colspan="6"><div class="empty-state"><i class="fa fa-car-side"></i>Nessun veicolo in officina</div></td></tr>
+                            <tr><td colspan="6"><div class="empty-state"><i class="fa fa-car-side"></i>{{ 'Nessun veicolo in officina'|trans }}</div></td></tr>
                         {% endfor %}
                     </tbody>
                 </table>
@@ -119,7 +120,7 @@
 
         <div class="col-xl-5 d-flex flex-column gap-4">
             <section class="card-box mb-0">
-                <div class="card-title"><span><i class="fa fa-key"></i> Consegne di oggi</span></div>
+                <div class="card-title"><span><i class="fa fa-key"></i> {{ 'Consegne di oggi'|trans }}</span></div>
                 {% for o in deliveries %}
                     <a class="list-row text-body" href="{{ path('order_show', {id: o.id}) }}">
                         <span class="hour-chip{{ o.late ? ' is-late' }}">{{ o.promisedAt|date('G:i') }}</span>
@@ -127,25 +128,25 @@
                             <div class="fw-bold">{{ o.vehicle.name }} <span class="text-muted fw-normal">· {{ o.customer.name }}</span></div>
                             <div class="mini text-muted">
                                 {%- if o.status == 'READY' -%}
-                                    {{ o.customerNotifiedAt ? 'cliente avvisato ' ~ o.customerNotifiedAt|when : 'pronta: avvisa il cliente' }}
+                                    {{ o.customerNotifiedAt ? 'cliente avvisato %when%'|trans({'%when%': o.customerNotifiedAt|when}) : 'pronta: avvisa il cliente'|trans }}
                                 {%- elseif o.runningTask -%}
-                                    in corso: {{ o.runningTask.title }}
+                                    {{ 'in corso: %task%'|trans({'%task%': o.runningTask.title}) }}
                                 {%- elseif o.hasUnassignedTasks -%}
-                                    lavorazioni senza meccanico
+                                    {{ 'lavorazioni senza meccanico'|trans }}
                                 {%- else -%}
-                                    {{ o.doneCount }}/{{ o.activeTasks|length }} lavorazioni completate
+                                    {{ '%done%/%total% lavorazioni completate'|trans({'%done%': o.doneCount, '%total%': o.activeTasks|length}) }}
                                 {%- endif -%}
                             </div>
                         </div>
                         {{ ui.order_status(o) }}
                     </a>
                 {% else %}
-                    <div class="empty-state py-3"><i class="fa fa-key"></i>Nessuna consegna promessa per oggi</div>
+                    <div class="empty-state py-3"><i class="fa fa-key"></i>{{ 'Nessuna consegna promessa per oggi'|trans }}</div>
                 {% endfor %}
             </section>
 
             <section class="card-box mb-0">
-                <div class="card-title"><span><i class="fa fa-triangle-exclamation"></i> Da gestire</span></div>
+                <div class="card-title"><span><i class="fa fa-triangle-exclamation"></i> {{ 'Da gestire'|trans }}</span></div>
                 {% for a in alerts|slice(0, 8) %}
                     <div class="list-row">
                         <span class="soft-icon i-{{ a.tone }}"><i class="fa {{ a.icon }}"></i></span>
@@ -153,15 +154,15 @@
                             <div class="fw-bold">{{ a.title }}</div>
                             <div class="mini text-muted">{{ a.text }}</div>
                         </div>
-                        <a class="btn btn-light btn-sm" href="{{ a.action == 'Pianifica' ? path('planning') : path('order_show', {id: a.order.id}) }}">{{ a.action }}</a>
+                        <a class="btn btn-light btn-sm" href="{{ a.action in ['Pianifica', 'Pianifica'|trans] ? path('planning') : path('order_show', {id: a.order.id}) }}">{{ a.action }}</a>
                     </div>
                 {% else %}
-                    <div class="empty-state py-3"><i class="fa fa-circle-check"></i>Niente da segnalare</div>
+                    <div class="empty-state py-3"><i class="fa fa-circle-check"></i>{{ 'Niente da segnalare'|trans }}</div>
                 {% endfor %}
             </section>
 
             <section class="card-box mb-0">
-                <div class="card-title"><span><i class="fa fa-chart-simple"></i> Settimana dal {{ monday|date('d/m') }}</span><a class="mini" href="{{ path('mechanic_index') }}">Dettaglio ore</a></div>
+                <div class="card-title"><span><i class="fa fa-chart-simple"></i> {{ 'Settimana dal %date%'|trans({'%date%': monday|date('d/m')}) }}</span><a class="mini" href="{{ path('mechanic_index') }}">{{ 'Dettaglio ore'|trans }}</a></div>
                 {% for w in week %}
                     <div class="week-row">
                         <b>{{ w.mechanic.name }}</b>
@@ -169,7 +170,7 @@
                         <span class="fw-bold text-nowrap">{{ w.worked|hours }}</span>
                     </div>
                     <div class="mini text-muted mb-2" style="padding-left: 100px">
-                        {{ w.done }} lavorazioni chiuse{% if w.done %} · stimate {{ w.estimated|duration }}, impiegate {{ w.spent|duration }}{% endif %}
+                        {{ '%count% lavorazione chiusa|%count% lavorazioni chiuse'|trans({'%count%': w.done}) }}{% if w.done %} · {{ 'stimate %estimated%, impiegate %spent%'|trans({'%estimated%': w.estimated|duration, '%spent%': w.spent|duration}) }}{% endif %}
                     </div>
                 {% endfor %}
             </section>

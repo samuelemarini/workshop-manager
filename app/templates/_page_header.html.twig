@@ -2,7 +2,7 @@
 <div class="page-header">
     <div class="page-title">
         {% if back is defined and back %}
-            <a class="back-btn" href="{{ back }}" title="Indietro"><i class="fa fa-arrow-left"></i></a>
+            <a class="back-btn" href="{{ back }}" title="{{ 'Indietro'|trans }}"><i class="fa fa-arrow-left"></i></a>
         {% else %}
             <span class="page-icon"><i class="fa {{ icon }}"></i></span>
         {% endif %}

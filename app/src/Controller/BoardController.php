@@ -31,7 +31,7 @@ class BoardController extends AppController
         $columns = [];
         foreach (self::COLUMNS as $status => $color) {
             $columns[$status] = [
-                'label' => $status === WorkOrder::DELIVERED ? 'Consegnate (7 gg)' : WorkOrder::STATUSES[$status],
+                'label' => $this->trans($status === WorkOrder::DELIVERED ? 'Consegnate (7 gg)' : WorkOrder::STATUSES[$status]),
                 'color' => $color,
                 'orders' => array_values(array_filter($list, fn (WorkOrder $o) => $o->getStatus() === $status)),
             ];
@@ -55,7 +55,7 @@ class BoardController extends AppController
         if ($request->isXmlHttpRequest()) {
             return new JsonResponse(['ok' => true, 'label' => $order->getStatusLabel()]);
         }
-        $this->addFlash('success', $order->getCode().': '.mb_strtolower($order->getStatusLabel()));
+        $this->addFlash('success', $order->getCode().': '.$order->getStatusLabel());
 
         return $this->back($request, 'order_show', ['id' => $order->getId()]);
     }

@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use App\Repository\VehicleRepository;
+use App\Util\Trans;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -106,6 +107,8 @@ class Vehicle
     }
 
     public function getFuel(): ?string { return $this->fuel; }
+    /** Da stampare: alimentazione tradotta (getFuel() resta il valore del form) */
+    public function getFuelLabel(): ?string { return $this->fuel === null ? null : Trans::label($this->fuel); }
     public function setFuel(?string $fuel): static { $this->fuel = $fuel; return $this; }
 
     public function getYear(): ?int { return $this->year; }

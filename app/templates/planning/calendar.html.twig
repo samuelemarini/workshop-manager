@@ -1,31 +1,34 @@
 {% extends 'base.html.twig' %}
 {% import '_macros.html.twig' as ui %}
 
-{% block title %}Calendario lavori{% endblock %}
+{% block title %}{{ 'Calendario lavori'|trans }}{% endblock %}
 
 {% block body %}
-    {% set months = ['', 'gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno', 'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre'] %}
-    {% set title = mode == 'week'
-        ? 'Settimana dal ' ~ from|date('j') ~ (from|date('n') != to|date('n') ? ' ' ~ months[from|date('n')]) ~ ' al ' ~ to|date('j') ~ ' ' ~ months[to|date('n')] ~ ' ' ~ to|date('Y')
-        : (months[day|date('n')] ~ ' ' ~ day|date('Y'))|capitalize %}
+    {% if mode == 'week' %}
+        {% set title = from|date('Yn') == to|date('Yn')
+            ? 'Settimana dal %from% al %to% %month% %year%'|trans({'%from%': from|date('j'), '%to%': to|date('j'), '%month%': to|local_date('MMMM'), '%year%': to|date('Y')})
+            : 'Settimana dal %from% al %to%'|trans({'%from%': from|date_skeleton('dMMMM'), '%to%': to|date_skeleton('dMMMMy')}) %}
+    {% else %}
+        {% set title = day|local_date('LLLL y')|capitalize %}
+    {% endif %}
     {% set actions %}
-        <a class="btn btn-light btn-icon-lg" href="{{ path('planning_calendar', {mode: mode, day: prev|date('Y-m-d')}) }}" aria-label="{{ mode == 'week' ? 'Settimana' : 'Mese' }} precedente"><i class="fa fa-chevron-left"></i></a>
-        <a class="btn btn-light" href="{{ path('planning_calendar', {mode: mode}) }}">{{ mode == 'week' ? 'Questa settimana' : 'Questo mese' }}</a>
-        <a class="btn btn-light btn-icon-lg" href="{{ path('planning_calendar', {mode: mode, day: next|date('Y-m-d')}) }}" aria-label="{{ mode == 'week' ? 'Settimana' : 'Mese' }} successiva"><i class="fa fa-chevron-right"></i></a>
-        <a class="btn btn-primary" href="{{ path('order_new') }}"><i class="fa fa-plus"></i> Nuova accettazione</a>
+        <a class="btn btn-light btn-icon-lg" href="{{ path('planning_calendar', {mode: mode, day: prev|date('Y-m-d')}) }}" aria-label="{{ (mode == 'week' ? 'Settimana precedente' : 'Mese precedente')|trans }}"><i class="fa fa-chevron-left"></i></a>
+        <a class="btn btn-light" href="{{ path('planning_calendar', {mode: mode}) }}">{{ (mode == 'week' ? 'Questa settimana' : 'Questo mese')|trans }}</a>
+        <a class="btn btn-light btn-icon-lg" href="{{ path('planning_calendar', {mode: mode, day: next|date('Y-m-d')}) }}" aria-label="{{ (mode == 'week' ? 'Settimana successiva' : 'Mese successivo')|trans }}"><i class="fa fa-chevron-right"></i></a>
+        <a class="btn btn-primary" href="{{ path('order_new') }}"><i class="fa fa-plus"></i> {{ 'Nuova accettazione'|trans }}</a>
     {% endset %}
-    {{ include('_page_header.html.twig', {icon: mode == 'week' ? 'fa-calendar-week' : 'fa-calendar', title: 'Calendario lavori', subtitle: title ~ (mode == 'week' ? '<span class="hide-mobile"> · trascina un lavoro su un altro giorno o meccanico</span>' : ' · tocca un giorno per aprirne il planning'), actions: actions}) }}
+    {{ include('_page_header.html.twig', {icon: mode == 'week' ? 'fa-calendar-week' : 'fa-calendar', title: 'Calendario lavori'|trans, subtitle: title|e ~ (mode == 'week' ? '<span class="hide-mobile"> · ' ~ 'trascina un lavoro su un altro giorno o meccanico'|trans|e ~ '</span>' : ' · ' ~ 'tocca un giorno per aprirne il planning'|trans|e), actions: actions}) }}
 
     <section class="table-card">
         <div class="table-toolbar">
             {{ include('planning/_modes.html.twig', {current: mode}) }}
             <div class="plan-legend hide-mobile">
-                <span><i class="sw b-run"></i>In corso</span>
-                <span><i class="sw" style="border: 2px solid #1a1718"></i>Pianificata</span>
-                <span><i class="sw b-done"></i>Completata</span>
-                <span><i class="sw b-block"></i>In attesa</span>
-                <span><i class="sw b-tbc"></i>Da autorizzare</span>
-                <span><i class="fa fa-key text-muted"></i>Consegna</span>
+                <span><i class="sw b-run"></i>{{ 'In corso'|trans }}</span>
+                <span><i class="sw" style="border: 2px solid #1a1718"></i>{{ 'Pianificata'|trans }}</span>
+                <span><i class="sw b-done"></i>{{ 'Completata'|trans }}</span>
+                <span><i class="sw b-block"></i>{{ 'In attesa'|trans }}</span>
+                <span><i class="sw b-tbc"></i>{{ 'Da autorizzare'|trans }}</span>
+                <span><i class="fa fa-key text-muted"></i>{{ 'Consegna'|trans }}</span>
             </div>
         </div>
 
@@ -38,8 +41,8 @@
                         <a class="agenda-head agenda-day" href="{{ path('planning', {day: key}) }}">
                             <span class="agenda-date"><small>{{ d.date|dow }}</small>{{ d.date|date('j') }}</span>
                             <div class="flex-grow-1">
-                                <div class="fw-bold">{{ d.date|long_date|split(' ')|first|capitalize }}</div>
-                                <div class="mini text-muted">{% for m in mechanics %}{% if d.load[m.id] is defined %}{{ m.name }} {{ (d.load[m.id] / 60)|num(1) }} h · {% endif %}{% endfor %}{{ d.items|length }} lavori</div>
+                                <div class="fw-bold">{{ d.date|local_date('EEEE')|capitalize }}</div>
+                                <div class="mini text-muted">{% for m in mechanics %}{% if d.load[m.id] is defined %}{{ m.name }} {{ (d.load[m.id] / 60)|num(1) }} h · {% endif %}{% endfor %}{{ '%count% lavoro|%count% lavori'|trans({'%count%': d.items|length}) }}</div>
                             </div>
                             <i class="fa fa-chevron-right text-muted"></i>
                         </a>
@@ -54,7 +57,7 @@
                                 {{ ui.mav(i.task.mechanic) }}
                             </a>
                         {% endfor %}
-                        {% if not d.items|length and not d.deliveries|length %}<div class="mini text-muted pb-1">Niente in programma</div>{% endif %}
+                        {% if not d.items|length and not d.deliveries|length %}<div class="mini text-muted pb-1">{{ 'Niente in programma'|trans }}</div>{% endif %}
                     </div>
                 {% endfor %}
             </div>
@@ -62,13 +65,13 @@
             <div class="pg-wrap hide-mobile">
                 <div class="wk" id="weekGrid" style="--days: {{ days|length }}" data-move-url="{{ path('planning_move') }}" data-token="{{ csrf_token('submit') }}">
                     <div class="wk-row wk-head">
-                        <div class="wk-label">Meccanico</div>
+                        <div class="wk-label">{{ 'Meccanico'|trans }}</div>
                         {% for key, d in days %}
                             <a class="wk-day{{ d.date == today ? ' today' }}" href="{{ path('planning', {day: key}) }}">{{ d.date|dow }} <b>{{ d.date|date('j') }}</b></a>
                         {% endfor %}
                     </div>
                     <div class="wk-row wk-deliveries">
-                        <div class="wk-label"><span class="soft-icon i-grey"><i class="fa fa-key"></i></span><span class="fw-bold">Consegne</span></div>
+                        <div class="wk-label"><span class="soft-icon i-grey"><i class="fa fa-key"></i></span><span class="fw-bold">{{ 'Consegne'|trans }}</span></div>
                         {% for key, d in days %}
                             <div class="wk-cell{{ d.date == today ? ' today' }}">
                                 {% for o in d.deliveries %}
@@ -83,14 +86,14 @@
                         <div class="wk-row">
                             <div class="wk-label">
                                 {{ ui.mav(r.mechanic, 'lg') }}
-                                <div><div class="fw-bold">{{ r.mechanic ? r.mechanic.name : 'Da assegnare' }}</div>{% if r.mechanic %}<div class="mini text-muted">{{ r.mechanic.dailyHours|num }} h/giorno</div>{% endif %}</div>
+                                <div><div class="fw-bold">{{ r.mechanic ? r.mechanic.name : 'Da assegnare'|trans }}</div>{% if r.mechanic %}<div class="mini text-muted">{{ '%hours% h/giorno'|trans({'%hours%': r.mechanic.dailyHours|num}) }}</div>{% endif %}</div>
                             </div>
                             {% for key, d in days %}
                                 {% set load = d.load[r.key] ?? 0 %}
                                 <div class="wk-cell{{ d.date == today ? ' today' }}{{ d.date|date('N') >= 6 ? ' weekend' }}" data-drop-day="{{ key }}" data-mechanic="{{ r.mechanic ? r.mechanic.id : '' }}">
                                     {% if r.capacity %}
                                         {% set pct = (load / r.capacity * 100)|round %}
-                                        <div class="wk-load{{ pct > 100 ? ' is-over' : (pct >= 85 ? ' is-full') }}" title="{{ (load / 60)|num(1) }} h su {{ (r.capacity / 60)|num }}"><span style="width: {{ min(100, pct) }}%"></span></div>
+                                        <div class="wk-load{{ pct > 100 ? ' is-over' : (pct >= 85 ? ' is-full') }}" title="{{ '%done% h su %total%'|trans({'%done%': (load / 60)|num(1), '%total%': (r.capacity / 60)|num}) }}"><span style="width: {{ min(100, pct) }}%"></span></div>
                                         <div class="wk-hours">{{ load ? (load / 60)|num(1) ~ ' h' : '' }}</div>
                                     {% endif %}
                                     {% for i in d.items|filter(i => i.mechanicKey == r.key) %}
@@ -112,7 +115,7 @@
         {% else %}
             <div class="pg-wrap">
                 <div class="mo">
-                    {% for n in ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'] %}<div class="mo-dow">{{ n }}</div>{% endfor %}
+                    {% for n in weekday_names() %}<div class="mo-dow">{{ n }}</div>{% endfor %}
                     {% for key, d in days %}
                         {% set other = d.date|date('n') != day|date('n') %}
                         {% set free = d.items|filter(i => i.mechanicKey == 0 and i.task.counts) %}
@@ -122,10 +125,10 @@
                                 {% set load = d.load[m.id] ?? 0 %}
                                 {% if load %}
                                     {% set pct = (load / (m.dailyHours * 60) * 100)|round %}
-                                    <div class="mo-mech{{ pct > 100 ? ' is-over' : (pct >= 85 ? ' is-full') }}">{{ ui.mav(m) }}<span>{{ (load / 60)|num(1) }} h</span><span class="mo-count">{{ d.items|filter(i => i.mechanicKey == m.id)|length }} lav.</span></div>
+                                    <div class="mo-mech{{ pct > 100 ? ' is-over' : (pct >= 85 ? ' is-full') }}">{{ ui.mav(m) }}<span>{{ (load / 60)|num(1) }} h</span><span class="mo-count">{{ '%count% lav.'|trans({'%count%': d.items|filter(i => i.mechanicKey == m.id)|length}) }}</span></div>
                                 {% endif %}
                             {% endfor %}
-                            {% if free|length %}<div class="mo-mech is-free">{{ ui.mav(null) }}<span>{{ free|length }} da assegnare</span></div>{% endif %}
+                            {% if free|length %}<div class="mo-mech is-free">{{ ui.mav(null) }}<span>{{ '%count% da assegnare'|trans({'%count%': free|length}) }}</span></div>{% endif %}
                             {% if d.deliveries|length %}
                                 <div class="mo-deliv" title="{{ d.deliveries|map(o => o.vehicle.name ~ ' ' ~ o.vehicle.plateLabel)|join(', ') }}"><i class="fa fa-key"></i> {{ d.deliveries|length }} · {{ d.deliveries|slice(0, 2)|map(o => o.vehicle.model)|join(', ') }}{{ d.deliveries|length > 2 ? '…' }}</div>
                             {% endif %}

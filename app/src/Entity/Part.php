@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use App\Repository\PartRepository;
+use App\Util\Trans;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 
@@ -101,7 +102,8 @@ class Part
 
     public function getStatus(): string { return $this->status; }
     public function setStatus(string $status): static { $this->status = $status; return $this; }
-    public function getStatusLabel(): string { return self::STATUSES[$this->status] ?? $this->status; }
+    /** Tradotta nella lingua dell'utente */
+    public function getStatusLabel(): string { return Trans::label(self::STATUSES[$this->status] ?? $this->status); }
 
     /** Il pezzo non è ancora in officina */
     public function isMissing(): bool

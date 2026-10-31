@@ -41,7 +41,7 @@ class VehicleController extends AppController
         if ($form->isSubmitted() && $form->isValid()) {
             $em->persist($vehicle);
             $em->flush();
-            $this->addFlash('success', 'Veicolo salvato');
+            $this->addFlash('success', $this->trans('Veicolo salvato'));
 
             return $this->redirectToRoute('vehicle_show', ['id' => $vehicle->getId()]);
         }
@@ -56,7 +56,7 @@ class VehicleController extends AppController
         // la targa resta libera per un eventuale nuovo inserimento
         $vehicle->setCancel(1)->setPlate($vehicle->getPlate().'X'.$vehicle->getId());
         $em->flush();
-        $this->addFlash('success', 'Veicolo eliminato');
+        $this->addFlash('success', $this->trans('Veicolo eliminato'));
 
         return $this->redirectToRoute('vehicle_index');
     }

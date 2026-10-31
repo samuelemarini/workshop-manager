@@ -24,7 +24,7 @@ class MechanicType extends AbstractType
             ->add('surname', TextType::class, ['label' => 'Cognome', 'required' => false])
             ->add('color', ChoiceType::class, ['label' => 'Colore', 'choices' => array_flip(Mechanic::COLORS), 'expanded' => true, 'attr' => ['class' => 'choice-pills color-pills']])
             ->add('dailyHours', NumberType::class, ['label' => 'Ore al giorno', 'html5' => true, 'scale' => 2, 'attr' => ['step' => '0.5', 'min' => 0, 'max' => 24]])
-            ->add('sort', IntegerType::class, ['label' => 'Ordine', 'required' => false, 'empty_data' => '0'])
+            ->add('sort', IntegerType::class, ['label' => 'Ordine in elenco', 'required' => false, 'empty_data' => '0'])
             ->add('pin', TextType::class, [
                 'mapped' => false,
                 'required' => false,

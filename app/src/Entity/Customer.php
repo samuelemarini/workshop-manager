@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use App\Repository\CustomerRepository;
+use App\Util\Trans;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 
@@ -88,6 +89,8 @@ class Customer
     public function setEmail(?string $email): static { $this->email = $email; return $this; }
 
     public function getContactPreference(): ?string { return $this->contactPreference; }
+    /** Da stampare: "Telefonata" tradotta (getContactPreference() resta il valore del form) */
+    public function getContactPreferenceLabel(): ?string { return $this->contactPreference === null ? null : Trans::label($this->contactPreference); }
     public function setContactPreference(?string $v): static { $this->contactPreference = $v; return $this; }
 
     public function getNotes(): ?string { return $this->notes; }

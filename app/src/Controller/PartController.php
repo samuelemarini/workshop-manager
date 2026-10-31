@@ -36,10 +36,10 @@ class PartController extends AppController
             if ($isNew) {
                 $order->addPart($part);
                 $em->persist($part);
-                $logger->order($order, 'Ricambio aggiunto: '.$part->getDescription(), $this->user());
+                $logger->order($order, 'Ricambio aggiunto: %part%', $this->user(), params: ['%part%' => $part->getDescription()]);
             }
             $em->flush();
-            $this->addFlash('success', 'Ricambio salvato');
+            $this->addFlash('success', $this->trans('Ricambio salvato'));
 
             return $this->redirectToRoute('order_show', ['id' => $order->getId()]);
         }
@@ -54,7 +54,7 @@ class PartController extends AppController
         $order = $part->getWorkOrder();
         $order->removePart($part);
         $em->flush();
-        $this->addFlash('success', 'Ricambio eliminato');
+        $this->addFlash('success', $this->trans('Ricambio eliminato'));
 
         return $this->redirectToRoute('order_show', ['id' => $order->getId()]);
     }

@@ -55,6 +55,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(options: ['default' => 0])]
     private int $cancel = 0;
 
+    /** Lingua dell'interfaccia, chiave di Language::LANGUAGES; null = quella del browser. */
+    #[ORM\Column(length: 5, nullable: true)]
+    private ?string $locale = null;
+
     public function __construct()
     {
         $this->customroles = new ArrayCollection();
@@ -104,6 +108,14 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $data["\0".self::class."\0password"] = hash('crc32c', $this->password);
 
         return $data;
+    }
+
+    public function getLocale(): ?string { return $this->locale; }
+    public function setLocale(?string $locale): static
+    {
+        $this->locale = isset(\App\Service\Language::LANGUAGES[$locale ?? '']) ? $locale : null;
+
+        return $this;
     }
 
     public function getName(): ?string { return $this->name; }

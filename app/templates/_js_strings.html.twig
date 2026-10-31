@@ -1,0 +1,29 @@
+{# Testi degli script (assets/js/i18n.js): la frase italiana e' la chiave, come nei template #}
+{%- set js_strings = {} -%}
+{%- for key in [
+    '%start%–%end% di %total%',
+    '(filtrati da %max%)',
+    ': attiva per invertire l’ordine',
+    ': attiva per ordinare',
+    ': attiva per togliere l’ordinamento',
+    'Accesso...',
+    'Aggiungi foto',
+    'Cerca...',
+    'Foto pronta',
+    'Nessun dato presente',
+    'Nessun elemento',
+    'Nessun risultato',
+    'Nessun risultato per %term%',
+    'Non è stato possibile cambiare lo stato.',
+    'Pagina precedente',
+    'Pagina successiva',
+    'Prima pagina',
+    'Rimuovi',
+    'Ultima pagina',
+    'mancano %time%',
+    'oltre la stima di %time%',
+    'ultimi letti %km%',
+] -%}
+    {%- set js_strings = js_strings|merge({(key): key|trans}) -%}
+{%- endfor %}
+<script type="application/json" id="i18n">{{ js_strings|json_encode(constant('JSON_UNESCAPED_UNICODE'))|raw }}</script>

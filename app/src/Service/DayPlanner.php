@@ -8,6 +8,7 @@ use App\Repository\MechanicRepository;
 use App\Repository\SettingRepository;
 use App\Repository\TaskRepository;
 use App\Repository\TimeEntryRepository;
+use App\Util\Trans;
 
 /**
  * Griglia del planning di un giorno: una riga per meccanico, colonne da 15 minuti
@@ -72,7 +73,7 @@ class DayPlanner
             $key = $task->getMechanic()?->getId();
             if ($key === null || !isset($rows[$key])) {
                 $key = 0;
-                $rows[0] ??= $this->row('none', 'Da assegnare', null, '?', 'none', ['mechanic' => '']);
+                $rows[0] ??= $this->row('none', Trans::t('Da assegnare'), null, '?', 'none', ['mechanic' => '']);
             }
             $rows[$key]['bars'][] = $this->bar($task, $from, $to, $col, $now);
             if ($task->getMechanic() && $task->counts()) {
@@ -93,7 +94,7 @@ class DayPlanner
                     continue;
                 }
                 foreach ($this->freeWindows($row['bars'], $from, $end, [$lunchStart, $lunchEnd]) as [$a, $b]) {
-                    $row['free'][] = ['gc' => $col($a).' / span '.intdiv($b - $a, self::SLOT), 'label' => 'Libero '.$this->hm($b - $a), 'start' => $this->clock($a), 'range' => $this->clock($a).'–'.$this->clock($b), 'from' => $a];
+                    $row['free'][] = ['gc' => $col($a).' / span '.intdiv($b - $a, self::SLOT), 'label' => Trans::t('Libero %time%', ['%time%' => $this->hm($b - $a)]), 'start' => $this->clock($a), 'range' => $this->clock($a).'–'.$this->clock($b), 'from' => $a];
                 }
             }
             unset($row);
@@ -166,7 +167,7 @@ class DayPlanner
             Task::RUNNING => 'run',
             Task::DONE => 'done',
             Task::PROPOSED => 'tbc',
-            Task::PAUSED => in_array($task->getPauseReason(), Task::WAITING_REASONS, true) ? 'block' : 'pause',
+            Task::PAUSED => in_array($task->getRawPauseReason(), Task::WAITING_REASONS, true) ? 'block' : 'pause',
             default => 'plan',
         };
         $order = $task->getWorkOrder();

@@ -1,6 +1,6 @@
 {% extends app.request.xmlHttpRequest ? '_modal.html.twig' : '_modal_page.html.twig' %}
 
-{% block modal_title %}{{ task.id ? task.title : 'Nuova lavorazione · ' ~ order.code }}{% endblock %}
+{% block modal_title %}{{ task.id ? task.title : 'Nuova lavorazione · %order%'|trans({'%order%': order.code}) }}{% endblock %}
 
 {% block modal_content %}
     {{ form_start(form) }}
@@ -14,12 +14,12 @@
             <div class="col-12">{{ form_row(form.checklistText) }}</div>
         </div>
         <div class="form-actions">
-            {% if task.id and not task.timeEntries|length %}<button class="btn btn-light text-danger me-auto" form="delete-task">Elimina</button>{% endif %}
-            <button class="btn btn-primary"><i class="fa fa-check"></i> Salva</button>
+            {% if task.id and not task.timeEntries|length %}<button class="btn btn-light text-danger me-auto" form="delete-task">{{ 'Elimina'|trans }}</button>{% endif %}
+            <button class="btn btn-primary"><i class="fa fa-check"></i> {{ 'Salva'|trans }}</button>
         </div>
     {{ form_end(form) }}
     {% if task.id and not task.timeEntries|length %}
-        <form id="delete-task" method="post" action="{{ path('task_delete', {id: task.id}) }}" data-native data-confirm="Eliminare la lavorazione «{{ task.title }}»?">
+        <form id="delete-task" method="post" action="{{ path('task_delete', {id: task.id}) }}" data-native data-confirm="{{ 'Eliminare la lavorazione «%title%»?'|trans({'%title%': task.title}) }}">
             <input type="hidden" name="_token" value="{{ csrf_token('submit') }}">
         </form>
     {% endif %}

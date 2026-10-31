@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use App\Repository\WorkOrderRepository;
+use App\Util\Trans;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -141,14 +142,38 @@ class WorkOrder
 
     public function getStatus(): string { return $this->status; }
     public function setStatus(string $status): static { $this->status = $status; return $this; }
-    public function getStatusLabel(): string { return self::STATUSES[$this->status] ?? $this->status; }
+    /** Tradotta nella lingua dell'utente */
+    public function getStatusLabel(): string { return Trans::label(self::STATUSES[$this->status] ?? $this->status); }
 
     public function isOpen(): bool
     {
         return !in_array($this->status, [self::DELIVERED, self::CANCELLED], true);
     }
 
-    public function getWaitingReason(): ?string { return $this->waitingReason; }
+    /**
+     * Motivo dell'attesa per lo schermo: "Attesa ricambi · Tagliando", "Attesa OK del cliente · 2 lavori extra"
+     * o testo libero dalla bacheca. Si traduce il motivo (primo pezzo) e il conteggio dei lavori extra;
+     * il titolo della lavorazione è un dato e resta com'è.
+     */
+    public function getWaitingReason(): ?string
+    {
+        if ($this->waitingReason === null) {
+            return null;
+        }
+        $parts = explode(' · ', $this->waitingReason);
+        foreach ($parts as $i => $part) {
+            if (preg_match('/^(\d+) lavor[oi] extra$/u', $part, $m)) {
+                $parts[$i] = Trans::t('%count% lavoro extra|%count% lavori extra', ['%count%' => (int) $m[1]]);
+            } elseif ($i === 0) {
+                $parts[$i] = Trans::label($part);
+            }
+        }
+
+        return implode(' · ', $parts);
+    }
+
+    /** Il valore salvato (italiano), per i confronti */
+    public function getRawWaitingReason(): ?string { return $this->waitingReason; }
     public function setWaitingReason(?string $reason): static { $this->waitingReason = $reason; return $this; }
 
     public function getCustomer(): ?Customer { return $this->customer; }
@@ -187,6 +212,8 @@ class WorkOrder
     }
 
     public function getFuelLevel(): ?string { return $this->fuelLevel; }
+    /** Da stampare: "Riserva"/"Pieno" tradotti (getFuelLevel() resta il valore del form) */
+    public function getFuelLevelLabel(): ?string { return $this->fuelLevel === null ? null : Trans::label($this->fuelLevel); }
     public function setFuelLevel(?string $level): static { $this->fuelLevel = $level; return $this; }
 
     public function getCustomerRequest(): ?string { return $this->customerRequest; }

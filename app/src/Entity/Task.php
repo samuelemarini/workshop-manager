@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use App\Repository\TaskRepository;
+use App\Util\Trans;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -146,7 +147,8 @@ class Task
 
     public function getStatus(): string { return $this->status; }
     public function setStatus(string $status): static { $this->status = $status; return $this; }
-    public function getStatusLabel(): string { return self::STATUSES[$this->status] ?? $this->status; }
+    /** Tradotta nella lingua dell'utente */
+    public function getStatusLabel(): string { return Trans::label(self::STATUSES[$this->status] ?? $this->status); }
 
     /** Conta per l'ordine: avanzamento, stime, chiusura */
     public function counts(): bool
@@ -159,7 +161,11 @@ class Task
         return in_array($this->status, [self::RUNNING, self::PAUSED], true);
     }
 
-    public function getPauseReason(): ?string { return $this->pauseReason; }
+    /** Motivo della pausa tradotto, per lo schermo; nel DB resta l'etichetta italiana di PAUSE_REASONS */
+    public function getPauseReason(): ?string { return $this->pauseReason === null ? null : Trans::label($this->pauseReason); }
+
+    /** Il valore salvato (chiave italiana), per i confronti con PAUSE_REASONS / WAITING_REASONS */
+    public function getRawPauseReason(): ?string { return $this->pauseReason; }
     public function setPauseReason(?string $reason): static { $this->pauseReason = $reason; return $this; }
 
     /** @return array<int, array{label: string, done: bool}> */

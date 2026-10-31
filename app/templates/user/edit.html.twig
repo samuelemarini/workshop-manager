@@ -1,49 +1,50 @@
 {% extends 'base.html.twig' %}
 {% import '_macros.html.twig' as ui %}
 
-{% block title %}{{ user.id ? user.fullName : 'Nuovo utente' }}{% endblock %}
+{% block title %}{{ user.id ? user.fullName : 'Nuovo utente'|trans }}{% endblock %}
 
 {% block body %}
     {% set actions %}
         {% if user.id and is_granted('ROLE_ADMIN') and user != app.user %}
-            {{ ui.post_button(path('user_delete', {id: user.id}), ' Elimina', 'fa-trash', 'btn-light text-danger', 'Eliminare l\'utente ' ~ user.username ~ '?') }}
+            {{ ui.post_button(path('user_delete', {id: user.id}), ' ' ~ 'Elimina'|trans, 'fa-trash', 'btn-light text-danger', 'Eliminare l\'utente %username%?'|trans({'%username%': user.username})) }}
         {% endif %}
     {% endset %}
     {{ include('_page_header.html.twig', {
         back: is_granted('ROLE_ADMIN') ? path('user_index') : path('homepage'),
-        title: user.id ? (user == app.user ? 'Il mio profilo' : user.fullName) : 'Nuovo utente',
+        title: user.id ? (user == app.user ? 'Il mio profilo'|trans : user.fullName) : 'Nuovo utente'|trans,
     }) }}
 
     <div class="card-box" style="max-width: 960px">
         {{ form_start(form) }}
-            <div class="section-title">Anagrafica</div>
+            <div class="section-title">{{ 'Anagrafica'|trans }}</div>
             <div class="row">
                 <div class="col-md-4">{{ form_row(form.username) }}</div>
                 <div class="col-md-4">{{ form_row(form.name) }}</div>
                 <div class="col-md-4">{{ form_row(form.surname) }}</div>
                 <div class="col-md-6">{{ form_row(form.email) }}</div>
+                <div class="col-md-6">{{ form_row(form.locale) }}</div>
             </div>
 
             {% if form.customroles is defined %}
-                <div class="section-title">Permessi</div>
+                <div class="section-title">{{ 'Permessi'|trans }}</div>
                 <div class="row">
                     <div class="col-md-6">{{ form_row(form.customroles) }}</div>
                     <div class="col-md-6 mini text-muted pt-md-4">
-                        <strong>Ufficio</strong>: accettazione, ordini di lavoro, planning, clienti, veicoli, meccanici.<br>
-                        <strong>Tablet officina</strong>: solo il tablet officina, dove i meccanici scelgono il proprio nome e registrano i tempi. Crea un utente così per il tablet in officina.<br>
-                        <strong>Amministratore</strong>: tutto, più utenti e impostazioni.
+                        {{ '<strong>Ufficio</strong>: accettazione, ordini di lavoro, planning, clienti, veicoli, meccanici.'|trans|raw }}<br>
+                        {{ '<strong>Tablet officina</strong>: solo il tablet officina, dove i meccanici scelgono il proprio nome e registrano i tempi. Crea un utente così per il tablet in officina.'|trans|raw }}<br>
+                        {{ '<strong>Amministratore</strong>: tutto, più utenti e impostazioni.'|trans|raw }}
                     </div>
                 </div>
             {% endif %}
 
-            <div class="section-title">Password</div>
+            <div class="section-title">{{ 'Password'|trans }}</div>
             <div class="row">
                 <div class="col-md-6">{{ form_row(form.plainPassword.first) }}</div>
                 <div class="col-md-6">{{ form_row(form.plainPassword.second) }}</div>
             </div>
 
             <div class="form-actions">
-                <button class="btn btn-primary"><i class="fa fa-check"></i> Salva</button>
+                <button class="btn btn-primary"><i class="fa fa-check"></i> {{ 'Salva'|trans }}</button>
             </div>
         {{ form_end(form) }}
     </div>

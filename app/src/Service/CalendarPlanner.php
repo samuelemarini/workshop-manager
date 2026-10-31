@@ -92,7 +92,7 @@ class CalendarPlanner
             Task::RUNNING => 'run',
             Task::DONE => 'done',
             Task::PROPOSED => 'tbc',
-            Task::PAUSED => $planned ? 'plan' : (in_array($task->getPauseReason(), Task::WAITING_REASONS, true) ? 'block' : 'pause'),
+            Task::PAUSED => $planned ? 'plan' : (in_array($task->getRawPauseReason(), Task::WAITING_REASONS, true) ? 'block' : 'pause'),
             default => 'plan',
         };
     }

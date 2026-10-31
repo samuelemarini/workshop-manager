@@ -30,8 +30,8 @@ class TaskController extends AppController
         $list = $tasks->findWorkshop();
         $today = new \DateTimeImmutable('today');
         $sections = [];
-        foreach ([Task::RUNNING => 'In corso', Task::PAUSED => 'In pausa', Task::TODO => 'Da iniziare'] as $status => $label) {
-            $sections[$status] = ['label' => $label, 'tasks' => array_values(array_filter($list, fn (Task $t) => $t->getStatus() === $status))];
+        foreach ([Task::RUNNING, Task::PAUSED, Task::TODO] as $status) {
+            $sections[$status] = ['label' => $this->trans(Task::STATUSES[$status]), 'tasks' => array_values(array_filter($list, fn (Task $t) => $t->getStatus() === $status))];
         }
 
         return $this->render('task/jobs.html.twig', [
@@ -50,7 +50,7 @@ class TaskController extends AppController
             $this->checkToken($request);
             $mechanic = $em->find(Mechanic::class, $request->request->getInt('mechanic'));
             if (!$mechanic || $mechanic->getCancel()) {
-                $this->addFlash('danger', 'Scegli il meccanico che ci lavora.');
+                $this->addFlash('danger', $this->trans('Scegli il meccanico che ci lavora.'));
 
                 return $this->back($request, 'jobs');
             }
@@ -60,7 +60,7 @@ class TaskController extends AppController
                 }
                 $workflow->start($task, $mechanic, $this->user());
                 $em->flush();
-                $this->addFlash('success', $task->getTitle().': in corso con '.$mechanic->getName());
+                $this->addFlash('success', $this->trans('%task%: in corso con %mechanic%', ['%task%' => $task->getTitle(), '%mechanic%' => $mechanic->getName()]));
             } catch (\DomainException $e) {
                 $this->addFlash('danger', $e->getMessage());
             }
@@ -83,7 +83,7 @@ class TaskController extends AppController
             $reason = (string) $request->request->get('reason');
             $workflow->pause($task, isset(Task::PAUSE_REASONS[$reason]) ? $reason : 'Altro', $this->user());
             $em->flush();
-            $this->addFlash('success', $task->getTitle().': in pausa');
+            $this->addFlash('success', $this->trans('%task%: in pausa', ['%task%' => $task->getTitle()]));
 
             return $this->back($request, 'jobs');
         }
@@ -104,7 +104,7 @@ class TaskController extends AppController
                 $task->getWorkOrder()->readKm($km);
             }
             $em->flush();
-            $this->addFlash('success', 'Lavorazione salvata');
+            $this->addFlash('success', $this->trans('Lavorazione salvata'));
 
             return $this->back($request, 'jobs');
         }
@@ -136,9 +136,9 @@ class TaskController extends AppController
                 $workflow->setOrderStatus($order, $order->getWorkedSeconds() ? WorkOrder::IN_PROGRESS : WorkOrder::ACCEPTED, $this->user());
             }
             $em->persist($task);
-            $logger->order($order, 'Lavorazione aggiunta: '.$task->getTitle(), $this->user());
+            $logger->order($order, 'Lavorazione aggiunta: %task%', $this->user(), params: ['%task%' => $task->getTitle()]);
             $em->flush();
-            $this->addFlash('success', 'Lavorazione aggiunta');
+            $this->addFlash('success', $this->trans('Lavorazione aggiunta'));
 
             return $this->redirectToRoute('order_show', ['id' => $order->getId()]);
         }
@@ -153,7 +153,7 @@ class TaskController extends AppController
         $form->handleRequest($request);
         if ($form->isSubmitted() && $form->isValid()) {
             $em->flush();
-            $this->addFlash('success', 'Lavorazione salvata');
+            $this->addFlash('success', $this->trans('Lavorazione salvata'));
 
             return $this->redirectToRoute('order_show', ['id' => $task->getWorkOrder()->getId()]);
         }
@@ -167,13 +167,13 @@ class TaskController extends AppController
         $this->checkToken($request);
         $order = $task->getWorkOrder();
         if ($task->getTimeEntries()->count()) {
-            $this->addFlash('danger', 'La lavorazione ha tempi registrati: non si può eliminare.');
+            $this->addFlash('danger', $this->trans('La lavorazione ha tempi registrati: non si può eliminare.'));
         } else {
             $order->removeTask($task);
-            $logger->order($order, 'Lavorazione eliminata: '.$task->getTitle(), $this->user());
+            $logger->order($order, 'Lavorazione eliminata: %task%', $this->user(), params: ['%task%' => $task->getTitle()]);
             $workflow->syncOrder($order, $this->user());
             $em->flush();
-            $this->addFlash('success', 'Lavorazione eliminata');
+            $this->addFlash('success', $this->trans('Lavorazione eliminata'));
         }
 
         return $this->redirectToRoute('order_show', ['id' => $order->getId()]);
@@ -187,7 +187,11 @@ class TaskController extends AppController
         $approved = $request->request->getBoolean('approved');
         $workflow->decide($task, $approved, $this->user());
         $em->flush();
-        $this->addFlash('success', $approved ? 'Autorizzata: '.($task->getMechanic()?->getName() ?? 'il meccanico').' la trova sul tablet' : 'Lavorazione rifiutata');
+        $this->addFlash('success', match (true) {
+            !$approved => $this->trans('Lavorazione rifiutata'),
+            $task->getMechanic() !== null => $this->trans('Autorizzata: %mechanic% la trova sul tablet', ['%mechanic%' => $task->getMechanic()->getName()]),
+            default => $this->trans('Autorizzata: il meccanico la trova sul tablet'),
+        });
 
         return $this->back($request, 'order_show', ['id' => $task->getWorkOrder()->getId()]);
     }
@@ -198,7 +202,7 @@ class TaskController extends AppController
         $this->checkToken($request);
         $workflow->finish($task, $this->user());
         $em->flush();
-        $this->addFlash('success', 'Lavorazione completata');
+        $this->addFlash('success', $this->trans('Lavorazione completata'));
 
         return $this->back($request, 'order_show', ['id' => $task->getWorkOrder()->getId()]);
     }

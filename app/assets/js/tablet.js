@@ -4,6 +4,7 @@ require('@fontsource/barlow/400.css');
 require('@fontsource/barlow/600.css');
 require('@fontsource/barlow/700.css');
 require('@fontsource/barlow-condensed/700.css');
+import { t, formatNumber } from './i18n.js';
 
 const token = () => document.querySelector('meta[name="csrf-token"]')?.content || '';
 const pad = (n) => String(n).padStart(2, '0');
@@ -35,7 +36,8 @@ function initTimers() {
                 el.classList.toggle('is-over', est > 0 && s > est);
                 if (delta && est > 0) {
                     const d = Math.abs(est - s);
-                    delta.textContent = (s > est ? 'oltre la stima di ' : 'mancano ') + `${Math.floor(d / 3600)}:${pad(Math.floor((d % 3600) / 60))}`;
+                    const time = `${Math.floor(d / 3600)}:${pad(Math.floor((d % 3600) / 60))}`;
+                    delta.textContent = s > est ? t('oltre la stima di %time%', { time }) : t('mancano %time%', { time });
                     delta.style.color = s > est ? '#ff8a9c' : '';
                 }
                 if (progress && est > 0) progress.style.width = Math.min(100, (s / est) * 100) + '%';
@@ -96,7 +98,9 @@ function initQuantities() {
         const btn = e.target.closest('[data-delta]');
         if (!btn) return;
         post(box.dataset.qtyUrl, { delta: btn.dataset.delta }).then((r) => {
-            box.querySelector('[data-qty]').textContent = String(r.qty).replace('.', ',');
+            // come il filtro Twig num: interi senza decimali, altrimenti uno
+                const qty = Number(r.qty);
+                box.querySelector('[data-qty]').textContent = formatNumber(qty, Number.isInteger(qty) ? 0 : 1);
         });
     }));
 }
@@ -154,7 +158,7 @@ function initUploads() {
     }));
     document.querySelectorAll('input[type=file]:not([data-autosubmit])').forEach((input) => input.addEventListener('change', () => {
         const label = input.closest('label')?.querySelector('[data-file-label]');
-        if (label) label.textContent = input.files.length ? 'Foto pronta' : 'Aggiungi foto';
+        if (label) label.textContent = input.files.length ? t('Foto pronta') : t('Aggiungi foto');
     }));
 }
 

@@ -4,15 +4,13 @@ namespace App\Twig;
 
 use App\Repository\TaskRepository;
 use App\Service\Dates;
+use App\Service\Language;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFilter;
 use Twig\TwigFunction;
 
 class AppExtension extends AbstractExtension
 {
-    private const DAYS = ['', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
-    private const MONTHS = ['', 'gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno', 'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre'];
-
     private ?int $proposed = null;
 
     public function __construct(private TaskRepository $tasks)
@@ -23,6 +21,9 @@ class AppExtension extends AbstractExtension
     {
         return [
             new TwigFunction('proposed_count', [$this, 'proposedCount']),
+            // [decimali, migliaia] della lingua attiva, per <html data-decimal data-group>
+            new TwigFunction('number_separators', [Language::class, 'separators']),
+            new TwigFunction('weekday_names', [$this, 'weekdayNames']),
         ];
     }
 
@@ -38,6 +39,8 @@ class AppExtension extends AbstractExtension
             new TwigFilter('num', [$this, 'num']),
             new TwigFilter('dow', [$this, 'dayOfWeek']),
             new TwigFilter('long_date', [$this, 'longDate']),
+            new TwigFilter('local_date', [Dates::class, 'format']),
+            new TwigFilter('date_skeleton', [Dates::class, 'skeleton']),
             new TwigFilter('money', [$this, 'money']),
             new TwigFilter('duration', [$this, 'duration']),
             new TwigFilter('minutes', [$this, 'minutes']),
@@ -46,7 +49,7 @@ class AppExtension extends AbstractExtension
         ];
     }
 
-    /** 9742 → "9.742"; 2.50 → "2,5" */
+    /** 9742 → "9.742"; 2.50 → "2,5" (separatori della lingua attiva) */
     public function num(int|float|string|null $value, int $decimals = 0): string
     {
         if ($value === null || $value === '') {
@@ -57,26 +60,35 @@ class AppExtension extends AbstractExtension
             $decimals = 1;
         }
 
-        return number_format($value, $decimals, ',', '.');
+        [$decimal, $group] = Language::separators();
+
+        return number_format($value, $decimals, $decimal, $group);
     }
 
+    /** "Lun", "Mon", "Lun."... */
     public function dayOfWeek(\DateTimeInterface $date): string
     {
-        return self::DAYS[(int) $date->format('N')];
+        return mb_convert_case(rtrim(Dates::format($date, 'EEE'), '.'), MB_CASE_TITLE);
     }
 
-    /** "giovedì 22 ottobre 2026" */
+    /** Nomi brevi dei giorni da lunedì a domenica nella lingua attiva: ["Lun", "Mar", ...] */
+    public function weekdayNames(): array
+    {
+        $monday = new \DateTimeImmutable('monday this week');
+
+        return array_map(fn (int $i) => $this->dayOfWeek($monday->modify("+$i days")), range(0, 6));
+    }
+
+    /** "giovedì 22 ottobre 2026", "Thursday 22 October 2026" */
     public function longDate(\DateTimeInterface $date): string
     {
-        $days = ['', 'lunedì', 'martedì', 'mercoledì', 'giovedì', 'venerdì', 'sabato', 'domenica'];
-
-        return $days[(int) $date->format('N')].' '.$date->format('j').' '.self::MONTHS[(int) $date->format('n')].' '.$date->format('Y');
+        return Dates::skeleton($date, 'EEEEdMMMMy');
     }
 
     /** "€ 258,20" */
     public function money(int|float|string|null $value): string
     {
-        return $value === null || $value === '' ? '' : '€ '.number_format((float) $value, 2, ',', '.');
+        return $value === null || $value === '' ? '' : '€ '.$this->num((float) $value, 2);
     }
 
     /** Secondi → "1:40" (ore:minuti) */
@@ -96,7 +108,7 @@ class AppExtension extends AbstractExtension
     /** Secondi → "2,4 h" */
     public function hours(?int $seconds): string
     {
-        return number_format(((int) $seconds) / 3600, 1, ',', '.').' h';
+        return $this->num(((int) $seconds) / 3600, 1).' h';
     }
 
     /** "oggi 15:30", "domani 9:00", "lun 26/10" */
