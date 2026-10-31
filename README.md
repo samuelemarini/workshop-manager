@@ -11,6 +11,7 @@
   <img alt="MariaDB" src="https://img.shields.io/badge/MariaDB-11-003545?logo=mariadb&logoColor=white">
   <img alt="Bootstrap 5" src="https://img.shields.io/badge/Bootstrap-5-7952B3?logo=bootstrap&logoColor=white">
   <img alt="Docker" src="https://img.shields.io/badge/Docker-compose-2496ED?logo=docker&logoColor=white">
+  <img alt="MIT License" src="https://img.shields.io/badge/license-MIT-blue">
 </p>
 
 <p align="center">
@@ -133,3 +134,7 @@ Variables are listed in `.env.example`; on start-up `docker/entrypoint.d/60-offi
 
 Symfony 8.1 + Doctrine, MariaDB 11, Twig + Bootstrap 5 built with Webpack Encore, Chart.js, DataTables;
 container `webdevops/php-apache:8.4`.
+
+## License
+
+[MIT](LICENSE) © 2026 Samuele Marini
